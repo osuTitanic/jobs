@@ -20,7 +20,8 @@ def parse_arguments() -> dict:
     parser.add_argument(
         "-n", "--name",
         type=str,
-        help="The name of the task to run"
+        help="The name of the task to run",
+        required=True
     )
     parser.add_argument(
         "-i", "--interval",
@@ -45,29 +46,18 @@ def main():
     task_names = [task.__name__ for task in app.TASKS]
     interval = args["interval"]
 
-    if args["name"]:
-        if args["name"] not in task_names:
-            app.session.logger.warning(f"Task '{args['name']}' not found.")
-            return
+    if args["name"] not in task_names:
+        app.session.logger.warning(f"Task '{args['name']}' not found.")
+        return
 
-        if args["once"]:
-            return app.run_tasks(
-                [app.TASKS[task_names.index(args["name"])]],
-                *args["task_arguments"]
-            )
-
-        return app.run_task_loop(
+    if args["once"]:
+        return app.run_tasks(
             [app.TASKS[task_names.index(args["name"])]],
-            interval,
             *args["task_arguments"]
         )
 
-    if args["once"]:
-        app.run_tasks(app.TASKS, *args["task_arguments"])
-        return
-
-    app.run_task_loop(
-        app.TASKS,
+    return app.run_task_loop(
+        [app.TASKS[task_names.index(args["name"])]],
         interval,
         *args["task_arguments"]
     )
