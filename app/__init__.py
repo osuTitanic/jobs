@@ -4,6 +4,7 @@ from typing import List, Callable
 from . import session
 from . import common
 
+from . import users
 from . import ranks
 from . import stats
 from . import ppv1
@@ -13,6 +14,7 @@ import time
 TASKS = [
     stats.update_usercount_history,
     stats.update_website_stats,
+    users.change_country,
     ranks.update_ranks,
     ranks.index_ranks,
     ppv1.update_ppv1
