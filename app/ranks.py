@@ -37,3 +37,22 @@ def update_ranks() -> None:
             app.session.logger.info(f'[ranks] -> Updated {user.name}.')
 
         app.session.logger.info('[ranks] -> Done.')
+
+def index_ranks() -> None:
+    """Check if the redis leaderboards are empty and rebuild them if necessary"""
+    if leaderboards.top_players(0):
+        return
+
+    app.session.logger.info(f'[ranks] -> Indexing player ranks...')
+
+    with app.session.database.managed_session() as session:
+        active_players = users.fetch_all(session=session)
+
+        for player in active_players:
+            for stats in player.stats:
+                leaderboards.update(
+                    stats,
+                    player.country.lower()
+                )
+
+        app.session.logger.info('[ranks] -> Done.')

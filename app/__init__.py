@@ -14,6 +14,7 @@ TASKS = [
     stats.update_usercount_history,
     stats.update_website_stats,
     ranks.update_ranks,
+    ranks.index_ranks,
     ppv1.update_ppv1
 ]
 
