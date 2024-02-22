@@ -7,6 +7,7 @@ from . import common
 from . import users
 from . import ranks
 from . import stats
+from . import ppv2
 from . import ppv1
 
 import time
@@ -17,7 +18,8 @@ TASKS = [
     users.change_country,
     ranks.update_ranks,
     ranks.index_ranks,
-    ppv1.update_ppv1
+    ppv2.recalculate_ppv2,
+    ppv1.update_ppv1,
 ]
 
 def run_tasks(tasks: List[Callable], *args) -> None:
