@@ -46,6 +46,6 @@ def update_ppv1() -> None:
                     session=session
                 )
 
-            app.session.logger.info(f'[ppv1] -> Updated {user.username} ({user.id}).')
+            app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
     app.session.logger.info('[ppv1] -> Done.')
