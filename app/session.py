@@ -26,7 +26,7 @@ events = EventQueue(
     connection=redis
 )
 
-logger = logging.getLogger('titanic')
+logger = logging.getLogger('jobs')
 
 storage = Storage()
 requests = Session()
