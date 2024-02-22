@@ -33,6 +33,10 @@ def parse_arguments() -> dict:
         action="store_true",
         help="Run the task once and then exit"
     )
+    parser.add_argument(
+        'task_arguments',
+        nargs=argparse.REMAINDER
+    )
 
     return vars(parser.parse_args())
 
@@ -47,17 +51,26 @@ def main():
             return
 
         if args["once"]:
-            app.run_tasks([app.TASKS[task_names.index(args["name"])]])
-            return
+            return app.run_tasks(
+                [app.TASKS[task_names.index(args["name"])]],
+                *args["task_arguments"]
+            )
 
-        app.run_task_loop([app.TASKS[task_names.index(args["name"])]], interval)
-        return
+        return app.run_task_loop(
+            [app.TASKS[task_names.index(args["name"])]],
+            interval,
+            *args["task_arguments"]
+        )
 
     if args["once"]:
-        app.run_tasks(app.TASKS)
+        app.run_tasks(app.TASKS, *args["task_arguments"])
         return
 
-    app.run_task_loop(app.TASKS, interval)
+    app.run_task_loop(
+        app.TASKS,
+        interval,
+        *args["task_arguments"]
+    )
 
 if __name__ == "__main__":
     try:

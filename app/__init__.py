@@ -18,19 +18,19 @@ TASKS = [
     ppv1.update_ppv1
 ]
 
-def run_tasks(tasks: List[Callable]) -> None:
+def run_tasks(tasks: List[Callable], *args) -> None:
     for task in tasks:
         try:
             session.logger.info(f'Running task: {task.__name__}')
             start_time = time.time()
-            task()
+            task(*args)
         except Exception as e:
             common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
         finally:
             session.logger.info(f'Done. ({time.time() - start_time:.2f} seconds)')
 
-def run_task_loop(tasks: List[Callable], interval_seconds: int = 60) -> None:
+def run_task_loop(tasks: List[Callable], interval_seconds: int = 60, *args) -> None:
     while True:
-        run_tasks(tasks)
+        run_tasks(tasks, *args)
         session.logger.info(f'Waiting {interval_seconds} seconds...')
         time.sleep(interval_seconds)
