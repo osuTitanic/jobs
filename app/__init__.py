@@ -11,16 +11,22 @@ from . import ppv1
 import time
 
 TASKS = [
-    ppv1.update_ppv1,
-    ranks.update_ranks,
     stats.update_usercount_history,
-    stats.update_website_stats
+    stats.update_website_stats,
+    ranks.update_ranks,
+    ppv1.update_ppv1
 ]
 
 def run_tasks(tasks: List[Callable]) -> None:
     for task in tasks:
-        session.logger.info(f'Running task: {task.__name__}')
-        task()
+        try:
+            session.logger.info(f'Running task: {task.__name__}')
+            start_time = time.time()
+            task()
+        except Exception as e:
+            session.logger.fatal(f'Failed to run task: {e}', exc_info=True)
+        finally:
+            session.logger.info(f'Done. ({time.time() - start_time:.2f} seconds)')
 
 def run_task_loop(tasks: List[Callable], interval_seconds: int = 60) -> None:
     while True:
