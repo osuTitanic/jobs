@@ -24,7 +24,7 @@ def run_tasks(tasks: List[Callable]) -> None:
             start_time = time.time()
             task()
         except Exception as e:
-            session.logger.fatal(f'Failed to run task: {e}', exc_info=True)
+            common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
         finally:
             session.logger.info(f'Done. ({time.time() - start_time:.2f} seconds)')
 
