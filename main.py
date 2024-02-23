@@ -20,8 +20,7 @@ def parse_arguments() -> dict:
     parser.add_argument(
         "-n", "--name",
         type=str,
-        help="The name of the task to run",
-        required=True
+        help="The name of the task to run"
     )
     parser.add_argument(
         "-i", "--interval",
@@ -35,6 +34,11 @@ def parse_arguments() -> dict:
         help="Run the task once and then exit"
     )
     parser.add_argument(
+        "-l", "--list",
+        action="store_true",
+        help="List all available tasks"
+    )
+    parser.add_argument(
         'task_arguments',
         nargs=argparse.REMAINDER
     )
@@ -45,6 +49,16 @@ def main():
     args = parse_arguments()
     task_names = [task.__name__ for task in app.TASKS]
     interval = args["interval"]
+
+    if args["list"]:
+        app.session.logger.info("Available tasks:")
+        for task in task_names:
+            app.session.logger.info(f"  - {task}")
+        return
+
+    if not args["name"]:
+        app.session.logger.error("No task name provided.")
+        return
 
     if args["name"] not in task_names:
         app.session.logger.warning(f"Task '{args['name']}' not found.")
@@ -66,7 +80,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        pass
-
-    app.session.logger.warning("Exiting...")
-    exit(0)
+        exit(0)
