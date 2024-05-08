@@ -16,6 +16,7 @@ TASKS = [
     stats.update_usercount_history,
     stats.update_website_stats,
     users.change_country,
+    users.recalculate_score_status,
     ranks.update_ranks,
     ranks.index_ranks,
     ppv2.recalculate_ppv2,
