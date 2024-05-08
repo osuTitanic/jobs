@@ -36,7 +36,7 @@ def change_country(user_id: int, new_country: str) -> None:
 
     app.session.logger.info(f'[users] -> Done.')
 
-def recalculate_score_status(user_id: int) -> None:
+def recalculate_score_status(user_id: int, mode: int) -> None:
     """Recalculate the score status of a user"""
     app.session.logger.info(f'[users] -> Recalculating score statuses of user...')
 
@@ -49,6 +49,7 @@ def recalculate_score_status(user_id: int) -> None:
 
         user_scores = session.query(DBScore) \
             .filter(DBScore.user_id == user.id) \
+            .filter(DBScore.mode == mode) \
             .filter(DBScore.status > 1) \
             .all()
 
