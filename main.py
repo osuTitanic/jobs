@@ -1,5 +1,7 @@
 
 from app.common.logging import Console
+from app import Task
+
 import argparse
 import logging
 import config
@@ -26,12 +28,7 @@ def parse_arguments() -> dict:
         "-i", "--interval",
         type=int,
         help="The interval in seconds to run the tasks",
-        default=60
-    )
-    parser.add_argument(
-        "-o", "--once",
-        action="store_true",
-        help="Run the task once and then exit"
+        default=None
     )
     parser.add_argument(
         "-l", "--list",
@@ -64,17 +61,22 @@ def main():
         app.session.logger.warning(f"Task '{args['name']}' not found.")
         return
 
-    if args["once"]:
-        return app.run_tasks(
-            [app.TASKS[task_names.index(args["name"])]],
-            *args["task_arguments"]
+    if not interval:
+        return app.run_task(
+            Task(
+                app.TASKS[task_names.index(args["name"])],
+                interval=0,
+                args=args["task_arguments"]
+            )
         )
 
-    return app.run_task_loop(
-        [app.TASKS[task_names.index(args["name"])]],
-        interval,
-        *args["task_arguments"]
-    )
+    return app.run_task_loop([
+        Task(
+            app.TASKS[task_names.index(args["name"])],
+            interval,
+            args["task_arguments"]
+        )
+    ])
 
 if __name__ == "__main__":
     try:
