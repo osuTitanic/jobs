@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
-from typing import List, Callable
+from dataclasses import dataclass, field
+from typing import List, Callable, Any
 
 from . import session
 from . import common
@@ -30,8 +30,8 @@ TASKS = [
 @dataclass
 class Task:
     function: Callable
-    interval: int
-    args: List[str]
+    interval: int = 60
+    args: List[Any] = field(default_factory=list)
     last_call: float = 0.0
 
     @property
