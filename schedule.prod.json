@@ -1,0 +1,22 @@
+[
+    {
+        "name": "update_usercount_history",
+        "interval": 60,
+        "args": []
+    },
+    {
+        "name": "update_website_stats",
+        "interval": 60,
+        "args": []
+    },
+    {
+        "name": "update_ranks",
+        "interval": 1800,
+        "args": []
+    },
+    {
+        "name": "update_ppv1",
+        "interval": 3600,
+        "args": []
+    }
+]

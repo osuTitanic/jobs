@@ -1,10 +1,12 @@
 
 from app.common.logging import Console
+from typing import List
 from app import Task
 
 import argparse
 import logging
 import config
+import json
 import app
 
 logging.basicConfig(
@@ -27,8 +29,7 @@ def parse_arguments() -> dict:
     parser.add_argument(
         "-i", "--interval",
         type=int,
-        help="The interval in seconds to run the tasks",
-        default=None
+        help="The interval in seconds to run the task"
     )
     parser.add_argument(
         "-l", "--list",
@@ -36,11 +37,31 @@ def parse_arguments() -> dict:
         help="List all available tasks"
     )
     parser.add_argument(
+        "-f", "--file",
+        type=str,
+        help="Use a schedule config file to run multiple tasks"
+    )
+    parser.add_argument(
         'task_arguments',
         nargs=argparse.REMAINDER
     )
 
     return vars(parser.parse_args())
+
+def tasks_from_file(file: str) -> List[Task]:
+    task_names = [task.__name__ for task in app.TASKS]
+
+    with open(file, 'r') as f:
+        tasks = json.load(f)
+
+    return [
+        Task(
+            app.TASKS[task_names.index(task['name'])],
+            task['interval'],
+            task['args']
+        )
+        for task in tasks
+    ]
 
 def main():
     args = parse_arguments()
@@ -51,6 +72,10 @@ def main():
         app.session.logger.info("Available tasks:")
         for task in task_names:
             app.session.logger.info(f"  - {task}")
+        return
+
+    if args["file"]:
+        app.run_task_loop(tasks_from_file(args["file"]))
         return
 
     if not args["name"]:
@@ -65,7 +90,6 @@ def main():
         return app.run_task(
             Task(
                 app.TASKS[task_names.index(args["name"])],
-                interval=0,
                 args=args["task_arguments"]
             )
         )
