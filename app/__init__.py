@@ -8,6 +8,7 @@ from typing import List, Callable, Any
 from . import session
 from . import common
 
+from . import beatmaps
 from . import users
 from . import ranks
 from . import stats
@@ -17,6 +18,7 @@ from . import ppv1
 import time
 
 TASKS = [
+    beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
     stats.update_website_stats,
     users.change_country,
