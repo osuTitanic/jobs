@@ -18,5 +18,10 @@
         "name": "update_ppv1",
         "interval": 3600,
         "args": []
+    },
+    {
+        "name": "update_beatmap_statuses",
+        "interval": 300,
+        "args": []
     }
 ]
