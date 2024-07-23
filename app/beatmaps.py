@@ -159,7 +159,10 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
 
     beatmapsets.update(
         beatmapset.id,
-        {'status': DatabaseStatus.Ranked.value},
+        {
+            'status': DatabaseStatus.Ranked.value,
+            'approved_at': datetime.now()
+        },
         session=session
     )
 
