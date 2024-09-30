@@ -67,3 +67,5 @@ def run_task_loop(tasks: List[Task]) -> None:
 
             task.last_call = time.time()
             executor.submit(task.function, *task.args)
+
+        time.sleep(1)
