@@ -1,7 +1,7 @@
 sqlalchemy==2.0.35
 python-dotenv==1.0.1
 requests==2.32.3
-redis==5.1.0
+redis==5.1.1
 geoip2==4.8.0
 titanic-pp-py==0.0.6
 sendgrid==6.11.0
