@@ -16,7 +16,7 @@
     },
     {
         "name": "update_ppv1",
-        "interval": 3600,
+        "interval": 21600,
         "args": []
     },
     {

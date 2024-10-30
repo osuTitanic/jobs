@@ -8,9 +8,9 @@ import config
 
 def update_ppv1() -> None:
     """Update ppv1 calculations for all users"""
-    app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
-
     with app.session.database.managed_session() as session:
+        app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
+
         for user in users.fetch_all(session=session):
             for user_stats in user.stats:
                 if user_stats.playcount <= 0:
@@ -22,6 +22,9 @@ def update_ppv1() -> None:
                     exclude_approved=(not config.APPROVED_MAP_REWARDS),
                     session=session
                 )
+
+                if not best_scores:
+                    continue
 
                 user_stats.ppv1 = performance.calculate_weighted_ppv1(best_scores)
 
@@ -48,4 +51,4 @@ def update_ppv1() -> None:
 
             app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
-    app.session.logger.info('[ppv1] -> Done.')
+        app.session.logger.info('[ppv1] -> Done.')
