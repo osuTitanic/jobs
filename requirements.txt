@@ -6,5 +6,5 @@ geoip2==4.8.1
 titanic-pp-py==0.0.7
 sendgrid==6.11.0
 boto3-type-annotations-with-docs==0.3.1
-boto3==1.35.68
+boto3==1.35.69
 psycopg2-binary==2.9.10
