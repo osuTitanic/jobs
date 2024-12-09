@@ -140,7 +140,10 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
         # Hide previous scores
         scores.update_by_beatmap_id(
             beatmap.id,
-            {'status_pp': ScoreStatus.Hidden.value},
+            {
+                'status_pp': ScoreStatus.Hidden.value,
+                'hidden': True
+            },
             session=session
         )
 
