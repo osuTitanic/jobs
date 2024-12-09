@@ -50,7 +50,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
         user_scores = session.query(DBScore) \
             .filter(DBScore.user_id == user.id) \
             .filter(DBScore.mode == mode) \
-            .filter(DBScore.status > 1) \
+            .filter(DBScore.status_pp > 1) \
             .all()
 
         if not user_scores:
@@ -69,7 +69,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
 
             # Update best score
             best_score = beatmap_scores[0]
-            scores.update(best_score.id, {'status': 3}, session=session)
+            scores.update(best_score.id, {'status_pp': 3}, session=session)
 
             app.session.logger.info(f'[users] ({beatmap_id}) -> Best score: {best_score.pp}pp')
 
@@ -93,13 +93,13 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
                     if score.id in best_score_ids:
                         continue
 
-                    scores.update(score.id, {'status': 2}, session=session)
+                    scores.update(score.id, {'status_pp': 2}, session=session)
 
                 if mods == best_score.mods:
                     # Don't update the best score
                     continue
 
                 # Update best mod-score
-                scores.update(mods_best_score.id, {'status': 4}, session=session)
+                scores.update(mods_best_score.id, {'status_pp': 4}, session=session)
 
     app.session.logger.info(f'[users] -> Done.')
