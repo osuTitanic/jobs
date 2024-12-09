@@ -51,6 +51,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
             .filter(DBScore.user_id == user.id) \
             .filter(DBScore.mode == mode) \
             .filter(DBScore.status_pp > 1) \
+            .filter(DBScore.hidden == False) \
             .all()
 
         if not user_scores:
