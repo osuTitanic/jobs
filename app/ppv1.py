@@ -1,8 +1,9 @@
-
 from app.common.database import users, stats, scores, histories
 from app.common.helpers import performance
 from app.common.cache import leaderboards
+from typing import List
 
+import multiprocessing
 import app.session
 import config
 
@@ -52,3 +53,33 @@ def update_ppv1() -> None:
             app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
         app.session.logger.info('[ppv1] -> Done.')
+
+def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
+    with app.session.database.managed_session() as session:
+        for score in all_scores:
+            scores.update(
+                score.id,
+                {'ppv1': performance.calculate_ppv1(score)},
+                session=session
+            )
+
+def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None:
+    with app.session.database.managed_session() as session:
+        all_scores = session.query(scores.DBScore) \
+            .filter(scores.DBScore.status_pp > min_status) \
+            .order_by(scores.DBScore.id) \
+            .all()
+
+        app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
+
+        with multiprocessing.Pool(workers) as pool:
+            pool.map(
+                recalculate_slice,
+                chunks(all_scores, len(all_scores) // workers)
+            )
+
+        app.session.logger.info('[ppv1] -> Done.')
+
+def chunks(list: list, amount: int):
+    for i in range(0, len(list), amount):
+        yield list[i:i + amount]
