@@ -26,7 +26,7 @@ def update_ppv1() -> None:
                 if not best_scores:
                     continue
 
-                user_stats.ppv1 = performance.calculate_weighted_ppv1(best_scores)
+                user_stats.ppv1 = performance.recalculate_weighted_ppv1(best_scores)
 
                 # Update stats
                 stats.update(
