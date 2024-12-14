@@ -21,6 +21,7 @@ TASKS = [
     beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
     stats.update_website_stats,
+    stats.restore_stats,
     users.change_country,
     users.recalculate_score_status,
     ranks.update_ranks,
