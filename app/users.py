@@ -116,8 +116,6 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
 
         # Update unmigrated scores to pp status
         session.query(DBScore) \
-            .filter(DBScore.user_id == user.id) \
-            .filter(DBScore.mode == mode) \
             .filter(DBScore.status_score == -1) \
             .filter(DBScore.status_pp > -1) \
             .filter(DBScore.hidden == False) \
@@ -150,7 +148,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
             best_score = beatmap_scores[0]
             scores.update(best_score.id, {'status_score': 3}, session=session)
 
-            app.session.logger.info(f'[users] ({beatmap_id}) -> Best score: {best_score.total_score}')
+            app.session.logger.info(f'[users] <{user_id}> ({beatmap_id}) -> Best score: {best_score.total_score}')
 
             # Sort scores by mods
             mods_dict = defaultdict(list)
