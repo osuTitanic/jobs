@@ -9,6 +9,7 @@ from . import session
 from . import common
 
 from . import beatmaps
+from . import scores
 from . import users
 from . import ranks
 from . import stats
@@ -23,9 +24,9 @@ TASKS = [
     stats.update_website_stats,
     stats.restore_stats,
     users.change_country,
-    users.recalculate_pp_status,
-    users.recalculate_score_status,
-    users.recalculate_statuses_all,
+    scores.recalculate_pp_status,
+    scores.recalculate_score_status,
+    scores.recalculate_statuses_all,
     ranks.update_ranks,
     ranks.index_ranks,
     ppv2.recalculate_ppv2,
