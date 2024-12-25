@@ -1,7 +1,9 @@
 
+from app.common.helpers.score import calculate_rx_score
 from app.common.database import users, scores
 from app.common.database import DBScore
 from collections import defaultdict
+from sqlalchemy import or_
 
 import app
 
@@ -171,5 +173,28 @@ def recalculate_statuses_all(exclude_pp=False) -> None:
             recalculate_pp_status(user.id, 1)
             recalculate_pp_status(user.id, 2)
             recalculate_pp_status(user.id, 3)
+
+    app.session.logger.info('[users] -> Done.')
+
+def recalculate_rx_scores() -> None:
+    with app.session.database.managed_session() as session:
+        user_scores = session.query(DBScore) \
+            .filter(or_(
+                DBScore.mods.op('&')(128) != 0,
+                DBScore.mods.op('&')(8192) != 0
+            )) \
+            .order_by(DBScore.status_pp.desc()) \
+            .all()
+        
+        app.session.logger.info(
+            f'[users] -> Recalculating {len(user_scores)} rx/ap scores...'
+        )
+        
+        for score in user_scores:
+            scores.update(
+                score.id,
+                {'total_score': calculate_rx_score(score, score.beatmap)},
+                session=session
+            )
 
     app.session.logger.info('[users] -> Done.')

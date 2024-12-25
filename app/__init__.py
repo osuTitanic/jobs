@@ -29,6 +29,7 @@ TASKS = [
     scores.recalculate_pp_status,
     scores.recalculate_score_status,
     scores.recalculate_statuses_all,
+    scores.recalculate_rx_scores,
     ranks.update_ranks,
     ranks.index_ranks,
     ppv2.recalculate_ppv2,
