@@ -1,8 +1,8 @@
 
 from app.common.cache import leaderboards, usercount as redis_usercount
 from app.common.database.objects import DBBeatmap, DBReplayHistory, DBScore, DBStats
-from app.common.database.repositories import usercount as db_usercount
-from app.common.database import beatmaps, scores, stats, users
+from app.common.database import beatmaps, scores, stats, users, histories
+from app.common.database import usercount as db_usercount
 from app.common.helpers import performance
 
 from datetime import timedelta
@@ -34,6 +34,87 @@ def update_usercount_history() -> None:
             app.session.logger.info(
                 f'[usercount] -> Deleted old usercount entries ({rows} rows affected).'
             )
+
+def recalculate_stats(user_id: int, mode: int) -> None:
+    with app.session.database.managed_session() as session:
+        if not (player := users.fetch_by_id(user_id, session=session)):
+            app.session.logger.warning(f'[stats] -> User "{user_id}" was not found.')
+            return
+
+        best_scores_by_score = scores.fetch_best_by_score(
+            user_id,
+            mode,
+            session=session
+        )
+
+        best_scores = scores.fetch_best(
+            user_id,
+            mode,
+            exclude_approved=(not config.APPROVED_MAP_REWARDS),
+            session=session
+        )
+
+        if not (best_scores or best_scores_by_score):
+            app.session.logger.warning(f'[stats] -> No scores found for user "{user_id}" in mode "{mode}".')
+            return
+
+        rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
+        ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
+        vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
+
+        session.query(DBStats) \
+            .filter(DBStats.user_id == user_id) \
+            .filter(DBStats.mode == mode) \
+            .update({
+                "acc": calculate_weighted_acc(best_scores),
+                "pp": calculate_weighted_pp(best_scores),
+                "pp_vn": calculate_weighted_pp(vn_scores),
+                "pp_rx": calculate_weighted_pp(rx_scores),
+                "pp_ap": calculate_weighted_pp(ap_scores),
+                "rscore": sum(score.total_score for score in best_scores_by_score)
+            })
+        session.commit()
+
+        user_stats = stats.fetch_by_mode(
+            user_id,
+            mode,
+            session=session
+        )
+
+        leaderboards.update(
+            user_stats,
+            player.country.lower()
+        )
+
+        user_stats.rank = leaderboards.global_rank(
+            user_stats.user_id,
+            user_stats.mode
+        )
+
+        histories.update_rank(
+            user_stats,
+            player.country
+        )
+
+        grades = scores.fetch_grades(
+            user_stats.user_id,
+            user_stats.mode,
+            session=session
+        )
+
+        stats.update(
+            user_stats.user_id,
+            user_stats.mode,
+            {
+                f'{grade.lower()}_count': count
+                for grade, count in grades.items()
+            },
+            session=session
+        )
+
+        app.session.logger.info(
+            f'[stats] -> Recalculated stats for user "{user_id}" in mode "{mode}".'
+        )
 
 def restore_stats(user_id: int, remove=False) -> None:
     with app.session.database.managed_session() as session:
@@ -110,22 +191,29 @@ def restore_stats(user_id: int, remove=False) -> None:
             user_stats.max_combo = max_combo
             user_stats.playtime = playtime
 
-            top_scores = scores.fetch_top_scores(
+            best_scores_by_score = scores.fetch_best_by_score(
                 user_id,
                 mode,
-                exclude_approved=(not config.APPROVED_MAP_REWARDS)
+                session=session
             )
 
-            rx_scores = [score for score in top_scores if (score.mods & 128) != 0]
-            ap_scores = [score for score in top_scores if (score.mods & 8192) != 0]
-            vn_scores = [score for score in top_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
+            best_scores = scores.fetch_best(
+                user_id,
+                mode,
+                exclude_approved=(not config.APPROVED_MAP_REWARDS),
+                session=session
+            )
 
-            user_stats.acc = calculate_weighted_acc(top_scores)
-            user_stats.pp = calculate_weighted_pp(top_scores)
+            rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
+            ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
+            vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
+
+            user_stats.acc = calculate_weighted_acc(best_scores)
+            user_stats.pp = calculate_weighted_pp(best_scores)
             user_stats.pp_vn = calculate_weighted_pp(vn_scores)
             user_stats.pp_rx = calculate_weighted_pp(rx_scores)
             user_stats.pp_ap = calculate_weighted_pp(ap_scores)
-            user_stats.rscore = sum(score.total_score for score in top_scores)
+            user_stats.rscore = sum(score.total_score for score in best_scores_by_score)
 
             # Update grades
             grades = scores.fetch_grades(
@@ -166,7 +254,7 @@ def restore_stats(user_id: int, remove=False) -> None:
                 .scalar() or 0
             
             user_stats.ppv1 = performance.calculate_weighted_ppv1(
-                top_scores,
+                best_scores,
                 session=session
             )
 
