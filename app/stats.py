@@ -116,6 +116,18 @@ def recalculate_stats(user_id: int, mode: int) -> None:
             f'[stats] -> Recalculated stats for user "{user_id}" in mode "{mode}".'
         )
 
+        del best_scores, best_scores_by_score, rx_scores, ap_scores, vn_scores
+
+def recalculate_stats_all() -> None:
+    with app.session.database.managed_session() as session:
+        users_entries = users.fetch_all(session=session)
+
+        for user in users_entries:
+            recalculate_stats(user.id, 0)
+            recalculate_stats(user.id, 1)
+            recalculate_stats(user.id, 2)
+            recalculate_stats(user.id, 3)
+
 def restore_stats(user_id: int, remove=False) -> None:
     with app.session.database.managed_session() as session:
         if remove:
