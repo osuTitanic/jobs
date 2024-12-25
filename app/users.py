@@ -187,6 +187,7 @@ def recalculate_statuses_all(exclude_pp=False) -> None:
 
     with app.session.database.managed_session() as session:
         users_list = users.fetch_all(session=session)
+        users_list.sort(key=lambda x: x.id)
 
         for user in users_list:
             recalculate_score_status(user.id, 0)
