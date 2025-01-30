@@ -84,6 +84,23 @@ def recalculate_user_scores(user: DBUser, session):
 
         app.session.logger.info(f'[ppv2] -> Recalculated pp: {user_stats.pp}')
 
+def recalculate_failed_pp_calculations():
+    with app.session.database.managed_session() as session:
+        failed_scores = session.query(DBScore) \
+            .filter(DBScore.pp == 0) \
+            .all()
+        
+        for score in failed_scores:
+            pp = performance.calculate_ppv2(score)
+
+            if not pp:
+                app.session.logger.warning(f'[ppv2] -> Failed to update pp for: {score.id}')
+                continue
+
+            score.pp = round(pp, 8)
+            scores.update(score.id, {'pp': score.pp}, session=session)
+            app.session.logger.info(f'[ppv2] -> Updated pp for: {score.id} ({score.pp})')
+
 def recalculate_ppv2():
     with app.session.database.managed_session() as session:
         all_users = users.fetch_all(session=session)
