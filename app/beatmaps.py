@@ -175,6 +175,9 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
         session=session
     )
 
+    # osz2 file will now be unused, so we can remove it
+    app.session.storage.remove_osz2(beatmapset.id)
+
     app.session.logger.info(
         f'[beatmaps] -> "{beatmapset.full_name}" was ranked.'
     )
