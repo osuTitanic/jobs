@@ -35,6 +35,7 @@ TASKS = [
     ppv2.recalculate_failed_pp_calculations,
     ppv2.recalculate_ppv2,
     ppv1.update_ppv1,
+    ppv1.update_ppv1_multiprocessing,
     ppv1.recalculate_ppv1_all_scores
 ]
 

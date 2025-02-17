@@ -1,58 +1,88 @@
 from app.common.database import users, stats, scores, histories
+from app.common.database.objects import DBUser
 from app.common.helpers import performance
 from app.common.cache import leaderboards
+from sqlalchemy.orm import Session
 from typing import List
 
 import multiprocessing
 import app.session
 import config
+import math
 
 def update_ppv1() -> None:
     """Update ppv1 calculations for all users"""
     with app.session.database.managed_session() as session:
         app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
 
-        for user in users.fetch_all(session=session):
-            for user_stats in user.stats:
-                if user_stats.playcount <= 0:
-                    continue
+        user_list = users.fetch_all(session=session)
+        user_list.sort(key=lambda user: (user.stats[0].ppv1 if user.stats else math.inf), reverse=True)
 
-                best_scores = scores.fetch_best(
-                    user.id,
-                    user_stats.mode,
-                    exclude_approved=(not config.APPROVED_MAP_REWARDS),
-                    session=session
-                )
-
-                if not best_scores:
-                    continue
-
-                user_stats.ppv1 = performance.recalculate_weighted_ppv1(best_scores)
-
-                # Update stats
-                stats.update(
-                    user.id,
-                    user_stats.mode,
-                    {'ppv1': user_stats.ppv1},
-                    session=session
-                )
-
-                # Update cache
-                leaderboards.update(
-                    user_stats,
-                    user.country
-                )
-
-                # Update rank history
-                histories.update_rank(
-                    user_stats,
-                    user.country,
-                    session=session
-                )
-
-            app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
+        for user in user_list:
+            update_ppv1_for_user(user, session)
 
         app.session.logger.info('[ppv1] -> Done.')
+
+def update_ppv1_for_user(user: DBUser, session: Session) -> None:
+    for user_stats in user.stats:
+        if user_stats.playcount <= 0:
+            continue
+
+        best_scores = scores.fetch_best(
+            user.id,
+            user_stats.mode,
+            exclude_approved=(not config.APPROVED_MAP_REWARDS),
+            session=session
+        )
+
+        if not best_scores:
+            continue
+
+        user_stats.ppv1 = performance.recalculate_weighted_ppv1(
+            best_scores,
+            session
+        )
+
+        # Update stats
+        stats.update(
+            user.id,
+            user_stats.mode,
+            {'ppv1': user_stats.ppv1},
+            session=session
+        )
+
+        # Update cache
+        leaderboards.update(
+            user_stats,
+            user.country
+        )
+
+        # Update rank history
+        histories.update_rank(
+            user_stats,
+            user.country,
+            session=session
+        )
+
+    app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
+
+def update_ppv1_multiprocessing(workers: int = 10) -> None:
+    with multiprocessing.Pool(workers) as pool:
+        with app.session.database.managed_session() as session:
+            app.session.logger.info(f'[ppv1] -> Updating ppv1 calculations ({workers} workers)...')
+
+            user_list = users.fetch_all(session=session)
+            user_list.sort(key=lambda user: (user.stats[0].ppv1 if user.stats else math.inf), reverse=True)
+
+            pool.starmap(
+                update_ppv1_for_user_no_session,
+                ((user,) for user in user_list)
+            )
+            pool.join()
+
+def update_ppv1_for_user_no_session(user: DBUser) -> None:
+    with app.session.database.managed_session() as session:
+        update_ppv1_for_user(user, session)
 
 def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
     with app.session.database.managed_session() as session:
