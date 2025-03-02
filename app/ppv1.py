@@ -3,12 +3,15 @@ from app.common.database.objects import DBUser
 from app.common.helpers import performance
 from app.common.cache import leaderboards
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List
 
 import multiprocessing
 import app.session
 import config
 import math
+import time
+import os
 
 def update_ppv1() -> None:
     """Update ppv1 calculations for all users"""
@@ -66,8 +69,8 @@ def update_ppv1_for_user(user: DBUser, session: Session) -> None:
 
     app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
-def update_ppv1_multiprocessing(workers: int = 10) -> None:
-    with multiprocessing.Pool(workers) as pool:
+def update_ppv1_multiprocessing(workers: str = '10') -> None:
+    with multiprocessing.Pool(int(workers)) as pool:
         with app.session.database.managed_session() as session:
             app.session.logger.info(f'[ppv1] -> Updating ppv1 calculations ({workers} workers)...')
 
@@ -78,10 +81,10 @@ def update_ppv1_multiprocessing(workers: int = 10) -> None:
                 update_ppv1_for_user_no_session,
                 ((user,) for user in user_list)
             )
-            pool.join()
 
 def update_ppv1_for_user_no_session(user: DBUser) -> None:
     with app.session.database.managed_session() as session:
+        ensure_db_connection(session)
         update_ppv1_for_user(user, session)
 
 def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
@@ -102,6 +105,12 @@ def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None
 
         app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
 
+        # Adjust pool size
+        config.POSTGRES_POOLSIZE = 1
+        config.POSTGRES_POOLSIZE_OVERFLOW = -1
+        os.environ['POSTGRES_POOLSIZE'] = '1'
+        os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+
         with multiprocessing.Pool(workers) as pool:
             pool.map(
                 recalculate_slice,
@@ -109,6 +118,17 @@ def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None
             )
 
         app.session.logger.info('[ppv1] -> Done.')
+
+def ensure_db_connection(session: Session) -> None:
+    while True:
+        try:
+            session.execute(text('SELECT 1'))
+            break
+        except Exception as e:
+            session.rollback()
+            app.session.logger.error(f'[ppv1] -> Error: {e}')
+            app.session.logger.error('[ppv1] -> Retrying in 2 seconds...')
+            time.sleep(2)
 
 def chunks(list: list, amount: int):
     for i in range(0, len(list), amount):
