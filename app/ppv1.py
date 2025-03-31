@@ -83,11 +83,15 @@ def update_ppv1_multiprocessing(workers: str = '10') -> None:
             )
 
 def update_ppv1_for_user_no_session(user: DBUser) -> None:
+    # Reset the database connection pool
+    app.session.database.engine.dispose()
+
     with app.session.database.managed_session() as session:
-        ensure_db_connection(session)
         update_ppv1_for_user(user, session)
 
 def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
+    app.session.database.engine.dispose()
+
     with app.session.database.managed_session() as session:
         for score in all_scores:
             scores.update(
@@ -95,11 +99,14 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
                 {'ppv1': performance.calculate_ppv1(score)},
                 session=session
             )
+            app.session.logger.info(
+                f'[ppv1] -> Updated ppv1 for: {score.id} ({score.ppv1})'
+            )
 
-def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None:
+def recalculate_ppv1_all_scores(min_status: str = '-1', workers: int = '10') -> None:
     with app.session.database.managed_session() as session:
         all_scores = session.query(scores.DBScore) \
-            .filter(scores.DBScore.status_pp > min_status) \
+            .filter(scores.DBScore.status_pp > int(min_status)) \
             .order_by(scores.DBScore.id) \
             .all()
 
@@ -111,24 +118,13 @@ def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None
         os.environ['POSTGRES_POOLSIZE'] = '1'
         os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
 
-        with multiprocessing.Pool(workers) as pool:
+        with multiprocessing.Pool(int(workers)) as pool:
             pool.map(
                 recalculate_slice,
-                chunks(all_scores, len(all_scores) // workers)
+                chunks(all_scores, len(all_scores) // int(workers))
             )
 
         app.session.logger.info('[ppv1] -> Done.')
-
-def ensure_db_connection(session: Session) -> None:
-    while True:
-        try:
-            session.execute(text('SELECT 1'))
-            break
-        except Exception as e:
-            session.rollback()
-            app.session.logger.error(f'[ppv1] -> Error: {e}')
-            app.session.logger.error('[ppv1] -> Retrying in 2 seconds...')
-            time.sleep(2)
 
 def chunks(list: list, amount: int):
     for i in range(0, len(list), amount):
