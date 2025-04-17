@@ -131,7 +131,7 @@ def update_beatmap_icon(
 
 def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
     approved_time = datetime.now() - beatmapset.approved_at
-    ranking_time = timedelta(weeks=1)
+    ranking_time = timedelta(days=5)
 
     if approved_time < ranking_time:
         return
