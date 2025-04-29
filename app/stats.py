@@ -1,7 +1,7 @@
 
 from app.common.cache import leaderboards, usercount as redis_usercount
 from app.common.database.objects import DBBeatmap, DBReplayHistory, DBScore, DBStats
-from app.common.database import beatmaps, scores, stats, users, histories
+from app.common.database import beatmaps, scores, stats, users, histories, beatmapsets
 from app.common.database import usercount as db_usercount
 from app.common.helpers import performance
 
@@ -17,6 +17,7 @@ def update_website_stats() -> None:
     with app.session.database.managed_session() as session:
         app.session.redis.set('bancho:totalusers', users.fetch_count(session=session))
         app.session.redis.set('bancho:totalbeatmaps', beatmaps.fetch_count(session=session))
+        app.session.redis.set('bancho:totalbeatmapsets', beatmapsets.fetch_count(session=session))
         app.session.redis.set('bancho:totalscores', scores.fetch_total_count(session=session))
 
 def update_usercount_history() -> None:
