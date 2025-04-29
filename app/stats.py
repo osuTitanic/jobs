@@ -13,12 +13,24 @@ import app.session
 import config
 
 def update_website_stats() -> None:
-    """Update the stats required for the website"""
+    """Update the stats required for the website & api stats"""
     with app.session.database.managed_session() as session:
         app.session.redis.set('bancho:totalusers', users.fetch_count(session=session))
+        app.session.redis.set('bancho:totalscores', scores.fetch_total_count(session=session))
         app.session.redis.set('bancho:totalbeatmaps', beatmaps.fetch_count(session=session))
         app.session.redis.set('bancho:totalbeatmapsets', beatmapsets.fetch_count(session=session))
-        app.session.redis.set('bancho:totalscores', scores.fetch_total_count(session=session))
+
+        for mode in range(4):
+            count_by_status = beatmaps.fetch_count_grouped_status(
+                mode,
+                session
+            )
+
+            for status, count in count_by_status.items():
+                app.session.redis.set(
+                    f'bancho:totalbeatmaps:{mode}:{status}',
+                    count
+                )
 
 def update_usercount_history() -> None:
     """Update the usercount history, displayed on the website"""
