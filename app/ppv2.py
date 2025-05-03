@@ -79,12 +79,6 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
                 session=session
             )
 
-            histories.update_rank(
-                user_stats,
-                user.country,
-                session=session
-            )
-
         app.session.logger.info(f'[ppv2] -> Recalculated pp: {user_stats.pp}')
 
 def recalculate_failed_ppv2_calculations():
