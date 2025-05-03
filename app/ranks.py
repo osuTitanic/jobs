@@ -55,5 +55,16 @@ def index_ranks() -> None:
                     stats,
                     player.country.lower()
                 )
+                leaderboards.update_leader_scores(
+                    stats,
+                    player.country.lower(),
+                    session=session
+                )
+
+            leaderboards.update_kudosu(
+                player.id,
+                player.country.lower(),
+                session=session
+            )
 
         app.session.logger.info('[ranks] -> Done.')
