@@ -3,14 +3,12 @@ from app.common.database.objects import DBUser
 from app.common.helpers import performance
 from app.common.cache import leaderboards
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 from typing import List
 
 import multiprocessing
 import app.session
 import config
 import math
-import time
 import os
 
 def update_ppv1() -> None:
