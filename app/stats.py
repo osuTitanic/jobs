@@ -106,7 +106,8 @@ def recalculate_stats(user_id: int, mode: int) -> None:
 
         histories.update_rank(
             user_stats,
-            player.country
+            player.country,
+            session=session
         )
 
         grades = scores.fetch_grades(
