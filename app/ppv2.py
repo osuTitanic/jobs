@@ -1,5 +1,5 @@
 
-from app.common.database.repositories import users, scores, stats, histories
+from app.common.database.repositories import users, scores, stats
 from app.common.database import DBScore, DBUser
 from app.common.helpers import performance
 from app.common.cache import leaderboards

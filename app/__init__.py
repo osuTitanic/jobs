@@ -19,6 +19,7 @@ from . import ppv1
 import time
 
 TASKS = [
+    beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
     stats.update_website_stats,

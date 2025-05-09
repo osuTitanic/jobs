@@ -1,6 +1,7 @@
 
 from app.common.constants import DatabaseStatus, ScoreStatus
-from app.common.database import DBBeatmapset
+from app.common.database import DBBeatmapset, DBBeatmap
+from app.common.helpers import performance
 from app.common.database import (
     nominations,
     beatmapsets,
@@ -265,3 +266,46 @@ def update_beatmap_statuses():
                 beatmapset,
                 session=session
             )
+
+def recalculate_beatmap_difficulty():
+    with app.session.database.managed_session() as session:
+        app.session.logger.info(
+            '[beatmaps] -> Recalculating beatmap difficulties'
+        )
+        current_offset = 0
+
+        while True:
+            pending_beatmaps = session.query(DBBeatmap) \
+                .offset(current_offset * 1000) \
+                .limit(1000) \
+                .all()
+                
+            if not pending_beatmaps:
+                break
+
+            for beatmap in pending_beatmaps:
+                beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+                if not beatmap_file:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
+                    )
+                    continue
+
+                result = performance.calculate_difficulty(
+                    beatmap_file,
+                    beatmap.mode
+                )
+
+                if not result:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Failed to calculate difficulty for beatmap {beatmap.id}'
+                    )
+                    continue
+
+                session.query(DBBeatmap) \
+                    .filter(DBBeatmap.id == beatmap.id) \
+                    .update({'diff': result.stars})
+                session.commit()
+
+            current_offset += 1
