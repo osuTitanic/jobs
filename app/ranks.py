@@ -3,6 +3,7 @@ from app.common.database import users, stats, histories
 from app.common.cache import leaderboards
 
 import app.session
+import config
 
 def update_ranks() -> None:
     """Update the rank history for all users"""
@@ -31,8 +32,13 @@ def update_ranks() -> None:
                     )
                     user_stats.rank = global_rank
 
-                    # Update rank history
-                    histories.update_rank(user_stats, user.country, session=session)
+                    if not config.FROZEN_RANK_UPDATES:
+                        # Update rank history
+                        histories.update_rank(
+                            user_stats,
+                            user.country,
+                            session=session
+                        )
 
             app.session.logger.info(f'[ranks] -> Updated {user.name}.')
 

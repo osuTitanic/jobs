@@ -104,11 +104,12 @@ def recalculate_stats(user_id: int, mode: int) -> None:
             user_stats.mode
         )
 
-        histories.update_rank(
-            user_stats,
-            player.country,
-            session=session
-        )
+        if not config.FROZEN_RANK_UPDATES:
+            histories.update_rank(
+                user_stats,
+                player.country,
+                session=session
+            )
 
         grades = scores.fetch_grades(
             user_stats.user_id,

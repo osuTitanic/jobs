@@ -58,12 +58,13 @@ def update_ppv1_for_user(user: DBUser, session: Session) -> None:
             user.country
         )
 
-        # Update rank history
-        histories.update_rank(
-            user_stats,
-            user.country,
-            session=session
-        )
+        if not config.FROZEN_RANK_UPDATES:
+            # Update rank history
+            histories.update_rank(
+                user_stats,
+                user.country,
+                session=session
+            )
 
     app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
