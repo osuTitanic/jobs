@@ -292,10 +292,17 @@ def recalculate_beatmap_difficulty():
                     )
                     continue
 
-                result = performance.calculate_difficulty(
-                    beatmap_file,
-                    beatmap.mode
-                )
+                try:
+                    result = performance.calculate_difficulty(
+                        beatmap_file,
+                        beatmap.mode
+                    )
+                except Exception as e:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Failed to calculate difficulty for beatmap {beatmap.id}',
+                        exc_info=e
+                    )
+                    continue
 
                 if not result:
                     app.session.logger.warning(
