@@ -44,6 +44,7 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
             scores.update(score.id, {'pp': score.pp}, session=session)
 
         app.session.logger.info(f'[ppv2] -> Current pp: {user_stats.pp}')
+        best_scores.sort(key=lambda x: x.pp, reverse=True)
 
         if best_scores:
             rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
