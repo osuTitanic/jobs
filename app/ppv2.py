@@ -185,5 +185,6 @@ def recalculate_all_scores() -> None:
             app.session.logger.info(
                 f'[ppv2] -> Recalculated chunk #{current_index} ({scores_per_index} scores).'
             )
+            current_index += 1
 
     app.session.logger.info(f'[ppv2] -> Done.')
