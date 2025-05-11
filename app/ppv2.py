@@ -156,3 +156,34 @@ def recalculate_ppv2_for_chunk(users: List[DBUser]) -> None:
 def chunks(list: list, amount: int):
     for i in range(0, len(list), amount):
         yield list[i:i + amount]
+
+def recalculate_all_scores() -> None:
+    current_index = 0
+    scores_per_index = 500
+
+    with app.session.database.managed_session() as session:
+        while True:
+            score_chunk = session.query(DBScore) \
+                .order_by(DBScore.status_pp.desc()) \
+                .offset(current_index * scores_per_index) \
+                .limit(scores_per_index) \
+                .all()
+            
+            if not score_chunk:
+                break
+
+            for score in score_chunk:
+                pp = performance.calculate_ppv2(score)
+
+                if not pp:
+                    app.session.logger.warning(f'[ppv2] -> Failed to update pp for: {score.id}')
+                    continue
+
+                score.pp = pp
+                scores.update(score.id, {'pp': score.pp}, session=session)
+
+            app.session.logger.info(
+                f'[ppv2] -> Recalculated chunk #{current_index} ({scores_per_index} scores).'
+            )
+
+    app.session.logger.info(f'[ppv2] -> Done.')
