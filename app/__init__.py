@@ -1,9 +1,9 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import List, Callable, Any
+from threading import Timer, Event
 
 from . import session
 from . import common
@@ -61,24 +61,27 @@ def run_task(task: Task) -> None:
     except Exception as e:
         common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
     finally:
-        session.logger.info(f'[{task.name}] Done. ({time.time() - task.last_call:.2f} seconds)')
+        task_callback(task)
+
+def task_callback(task: Task) -> None:
+    session.logger.info(
+        f'[{task.name}] Done. '
+        f'({time.time() - task.last_call:.2f} seconds)'
+    )
+    schedule_task(task)
+
+def schedule_task(task: Task) -> Timer:
+    timer = Timer(task.interval, run_task, args=(task,))
+    timer.daemon = True
+    timer.start()
+    return timer
 
 def run_task_loop(tasks: List[Task]) -> None:
     session.logger.info(f'Scheduling {len(tasks)} tasks:')
 
     for task in tasks:
         session.logger.info(f'  - {task.name} ({task.interval})')
+        schedule_task(task)
 
-    executor = ThreadPoolExecutor(len(tasks))
-
-    while True:
-        for task in tasks:
-            elapsed_time = (time.time() - task.last_call)
-
-            if elapsed_time < task.interval:
-                continue
-
-            task.last_call = time.time()
-            executor.submit(task.function, *task.args)
-
-        time.sleep(1)
+    # Keep the main thread alive to allow tasks to run
+    Event().wait()
