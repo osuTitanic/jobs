@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import List, Callable, Any
-from threading import Timer, Event
+from threading import Thread, Event
 
 from . import session
 from . import common
@@ -53,28 +53,28 @@ class Task:
     def name(self) -> str:
         return self.function.__name__
 
-def run_task(task: Task) -> None:
-    try:
-        session.logger.info(f'[{task.name}] Running task...')
-        task.last_call = time.time()
-        task.function(*task.args)
-    except Exception as e:
-        common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
-    finally:
-        task_callback(task)
+    def run(self) -> None:
+        try:
+            session.logger.info(f'[{self.name}] Running task...')
+            self.last_call = time.time()
+            self.function(*self.args)
+        except Exception as e:
+            common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
+        finally:
+            session.logger.info(
+                f'[{self.name}] Done. '
+                f'({time.time() - self.last_call:.2f} seconds)'
+            )
 
-def task_callback(task: Task) -> None:
-    session.logger.info(
-        f'[{task.name}] Done. '
-        f'({time.time() - task.last_call:.2f} seconds)'
-    )
-    schedule_task(task)
+    def loop(self) -> None:
+        while True:
+            time.sleep(self.interval)
+            self.run()
 
-def schedule_task(task: Task) -> Timer:
-    timer = Timer(task.interval, run_task, args=(task,))
-    timer.daemon = True
-    timer.start()
-    return timer
+def schedule_task(task: Task) -> Thread:
+    thread = Thread(target=task.loop, daemon=True)
+    thread.start()
+    return thread
 
 def run_task_loop(tasks: List[Task]) -> None:
     session.logger.info(f'Scheduling {len(tasks)} tasks:')
