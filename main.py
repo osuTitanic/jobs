@@ -87,12 +87,10 @@ def main():
         return
 
     if not interval:
-        return app.run_task(
-            Task(
-                app.TASKS[task_names.index(args["name"])],
-                args=args["task_arguments"]
-            )
-        )
+        return Task(
+            app.TASKS[task_names.index(args["name"])],
+            args=args["task_arguments"]
+        ).run()
 
     return app.run_task_loop([
         Task(
