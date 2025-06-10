@@ -14,6 +14,9 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
+# Disable output buffering
+ENV PYTHONUNBUFFERED=1
+
 # Copy source code
 COPY . .
 
