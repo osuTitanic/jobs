@@ -105,7 +105,9 @@ def apply_migration(activity: DBActivity, session: Session) -> None:
             data['username'] = activity_args[0]
             data['mode'] = match.group('mode')
             data['mods'] = match.group('mods')
-            data['pp'] = int(match.group('pp'))
+            
+            if match.group('pp'):
+                data['pp'] = int(match.group('pp'))
 
         case UserActivity.LostFirstPlace:
             # ... has lost first place on <beatmap> <mode_name>
