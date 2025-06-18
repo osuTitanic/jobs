@@ -30,6 +30,10 @@ TOP_PLAY_REGEX = re.compile(
     r'{} got a new top play on {} with (?P<pp>\d+)pp (?P<mode_name>.+)'
 )
 
+ACHIEVEMENT_UNLOCKED_REGEX = re.compile(
+    r'{} unlocked an achievement: (?P<achievement_name>.+)'
+)
+
 def migrate_activity() -> None:
     iteration_size = 1000
     iteration_offset = 0
@@ -146,6 +150,18 @@ def apply_migration(activity: DBActivity, session: Session) -> None:
             data['username'] = activity_args[0]
             data['mode'] = match.group('mode_name')
             data['pp'] = int(match.group('pp'))
+            
+        case UserActivity.AchievementUnlocked:
+            # ... unlocked an achievement: <achievement_name>
+            match = ACHIEVEMENT_UNLOCKED_REGEX.match(activity.activity_text)
+
+            if not match:
+                return app.session.logger.warning(
+                    f'[activity] -> Invalid AchievementUnlocked description: "{activity.activity_text}" for user {activity.user_id}'
+                )
+
+            data['username'] = activity_args[0]
+            data['achievement'] = match.group('achievement_name')
 
         case _:
             return app.session.logger.warning(
