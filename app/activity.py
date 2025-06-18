@@ -15,7 +15,7 @@ NUMBER_ONE_REGEX = re.compile(
 )
 
 BEATMAP_LEADERBOARD_RANK_REGEX = re.compile(
-    r'{} achieved rank #(?P<rank>\d+) on {}(?: with (?P<mods>.+?))? <(?P<mode>.+)> \((?P<pp>\d+)pp\)'
+    r'{} achieved rank #(?P<rank>\d+) on {}(?: with (?P<mods>.+?))? <(?P<mode>.+)>(?: \((?P<pp>\d+)pp\))?'
 )
 
 LOST_FIRST_PLACE_REGEX = re.compile(
