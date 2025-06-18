@@ -9,6 +9,7 @@ from . import session
 from . import common
 
 from . import beatmaps
+from . import activity
 from . import scores
 from . import users
 from . import ranks
@@ -21,6 +22,7 @@ import time
 TASKS = [
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
+    activity.migrate_activity,
     stats.update_usercount_history,
     stats.update_website_stats,
     stats.recalculate_stats_all,
