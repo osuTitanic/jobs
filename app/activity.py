@@ -19,15 +19,15 @@ BEATMAP_LEADERBOARD_RANK_REGEX = re.compile(
 )
 
 LOST_FIRST_PLACE_REGEX = re.compile(
-    r'{} has lost first place on {} (?P<mode_name>.+)'
+    r'{} has lost first place on {} <(?P<mode_name>.+)>'
 )
 
 PP_RECORD_REGEX = re.compile(
-    r'{} has set the new pp record on {} with (?P<pp>\d+)pp (?P<mode_name>.+)'
+    r'{} has set the new pp record on {} with (?P<pp>\d+)pp <(?P<mode_name>.+)>'
 )
 
 TOP_PLAY_REGEX = re.compile(
-    r'{} got a new top play on {} with (?P<pp>\d+)pp (?P<mode_name>.+)'
+    r'{} got a new top play on {} with (?P<pp>\d+)pp <(?P<mode_name>.+)>'
 )
 
 ACHIEVEMENT_UNLOCKED_REGEX = re.compile(
