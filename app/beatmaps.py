@@ -153,23 +153,37 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
     if config.REMOVE_SCORES_ON_RANKED:
         hide_scores(beatmapset, session=session)
 
+    max_drain = max(
+        beatmap.drain_length
+        for beatmap in beatmapset.beatmaps
+    )
+
+    # Determine status based on drain time
+    # Map will be set to "Approved" if drain time
+    # exceeds 5 minutes, otherwise "Ranked"
+    status = (
+        DatabaseStatus.Ranked
+        if max_drain < 5*60 else
+        DatabaseStatus.Approved
+    )
+
     update_beatmap_icon(
         beatmapset,
-        DatabaseStatus.Ranked.value,
+        status.value,
         beatmapset.status,
         session=session
     )
 
     move_beatmap_topic(
         beatmapset,
-        DatabaseStatus.Ranked.value,
+        status.value,
         session=session
     )
 
     beatmapsets.update(
         beatmapset.id,
         {
-            'status': DatabaseStatus.Ranked.value,
+            'status': status.value,
             'approved_at': datetime.now()
         },
         session=session
@@ -177,16 +191,16 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
 
     beatmaps.update_by_set_id(
         beatmapset.id,
-        {'status': DatabaseStatus.Ranked.value},
+        {'status': status.value},
         session=session
+    )
+
+    app.session.logger.info(
+        f'[beatmaps] -> "{beatmapset.full_name}" was {status.name.lower()}.'
     )
 
     # osz2 file will now be unused, so we can remove it
     app.session.storage.remove_osz2(beatmapset.id)
-
-    app.session.logger.info(
-        f'[beatmaps] -> "{beatmapset.full_name}" was ranked.'
-    )
 
 def handle_pending_set(beatmapset: DBBeatmapset, session: Session):
     last_update = datetime.now() - beatmapset.last_update
