@@ -21,6 +21,7 @@ REDIS_PORT = int(os.environ.get('REDIS_PORT', 6379))
 
 DOMAIN_NAME = os.environ.get('DOMAIN_NAME')
 
+REMOVE_SCORES_ON_RANKED = eval(os.environ.get('REMOVE_SCORES_ON_RANKED', 'False').capitalize())
 APPROVED_MAP_REWARDS = eval(os.environ.get('APPROVED_MAP_REWARDS', 'False').capitalize())
 FROZEN_RANK_UPDATES = eval(os.environ.get('FROZEN_RANK_UPDATES', 'False').capitalize())
 S3_ENABLED = eval(os.environ.get('ENABLE_S3', 'True').capitalize())

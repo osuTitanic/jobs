@@ -14,6 +14,7 @@ from app.common.database import (
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
+import config
 import app
 
 def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
@@ -130,13 +131,7 @@ def update_beatmap_icon(
         session=session
     )
 
-def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
-    approved_time = datetime.now() - beatmapset.approved_at
-    ranking_time = timedelta(weeks=1)
-
-    if approved_time < ranking_time:
-        return
-
+def hide_scores(beatmapset: DBBeatmapset, session: Session) -> None:
     for beatmap in beatmapset.beatmaps:
         # Hide previous scores
         scores.update_by_beatmap_id(
@@ -147,6 +142,16 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
             },
             session=session
         )
+
+def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
+    approved_time = datetime.now() - beatmapset.approved_at
+    ranking_time = timedelta(weeks=1)
+
+    if approved_time < ranking_time:
+        return
+
+    if config.REMOVE_SCORES_ON_RANKED:
+        hide_scores(beatmapset, session=session)
 
     update_beatmap_icon(
         beatmapset,
