@@ -26,7 +26,7 @@ def update_beatmap_metadata(info: dict, session: Session) -> None:
             'count_normal': info['count_circles'],
             'count_slider': info['count_sliders'],
             'count_spinner': info['count_spinners'],
-            'drain_length': info['drain']
+            'drain_length': info['hit_length']
         },
         session=session
     )
