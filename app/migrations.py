@@ -4,7 +4,9 @@ from app.common.database import DBBeatmapset, DBBeatmap
 from sqlalchemy.orm import Session, selectinload
 
 import app.session
+import zipfile
 import time
+import io
 
 def fetch_beatmapset_info(set_id: int) -> dict:
     response = app.session.requests.get(f'https://osu.direct/api/v2/s/{set_id}',)
@@ -74,3 +76,42 @@ def migrate_beatmaps() -> None:
             app.session.logger.info(
                 f"[migration] -> Completed processing {current_offset} beatmapsets."
             )
+
+def fix_video_metadata() -> None:
+    with app.session.database.managed_session() as session:
+        affected_sets = session.query(DBBeatmapset) \
+            .filter(DBBeatmapset.has_video == False) \
+            .filter(DBBeatmapset.server == 1) \
+            .all()
+            
+        for set in affected_sets:
+            osz_file = app.session.storage.get_osz(set.id)
+            
+            if not osz_file:
+                app.session.logger.warning(f"[migration] -> No OSZ file found for beatmapset {set.id}. Skipping...")
+                continue
+            
+            video_file_extensions = (".wmv", ".flv", ".mp4", ".avi", ".m4v", ".mpg")
+            
+            with zipfile.ZipFile(io.BytesIO(osz_file), 'r') as zf:
+                video_files = [
+                    name for name in zf.namelist()
+                    if name.lower().endswith(video_file_extensions)
+                ]
+
+                if len(video_files) <= 0:
+                    continue
+
+                app.session.logger.info(
+                    f"[migration] -> Found {len(video_files)} video files in beatmapset {set.id}."
+                )
+
+                beatmapsets.update(
+                    set.id,
+                    {'has_video': True},
+                    session=session
+                )
+
+        app.session.logger.info(
+            f"[migration] -> Done."
+        )

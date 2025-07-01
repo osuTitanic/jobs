@@ -23,6 +23,7 @@ TASKS = [
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
     migrations.migrate_beatmaps,
+    migrations.fix_video_metadata,
     stats.update_usercount_history,
     stats.update_website_stats,
     stats.recalculate_stats_all,
