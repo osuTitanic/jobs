@@ -93,7 +93,7 @@ def fix_video_metadata() -> None:
             
             video_file_extensions = (".wmv", ".flv", ".mp4", ".avi", ".m4v", ".mpg")
             
-            with zipfile.ZipFile(io.BytesIO(osz_file), 'r') as zf:
+            with zipfile.ZipFile(io.BytesIO(b''.join(osz_file)), 'r') as zf:
                 video_files = [
                     name for name in zf.namelist()
                     if name.lower().endswith(video_file_extensions)
