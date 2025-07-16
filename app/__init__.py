@@ -27,6 +27,7 @@ TASKS = [
     stats.recalculate_stats,
     stats.restore_stats,
     users.change_country,
+    users.avatar_migration,
     scores.recalculate_pp_status,
     scores.recalculate_score_status,
     scores.recalculate_statuses_all,
