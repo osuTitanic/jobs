@@ -312,13 +312,5 @@ def oldsu_score_migration(csv_filename: str) -> None:
                 upload_replay(score_data, session)
                 user_ids.add(score_data['user_id'])
 
-    app.session.logger.info(f'[scores] -> Migrated scores.')
-    app.session.logger.info(f'[scores] -> Recalculating statuses for migrated scores...')
-
-    for user in user_ids:
-        recalculate_pp_status(user, 0)
-        recalculate_pp_status(user, 1)
-        recalculate_score_status(user, 0)
-        recalculate_score_status(user, 1)
-            
-    app.session.logger.info('[scores] -> Oldsu score migration complete.')
+    app.session.logger.info(f'[scores] -> Uploaded replays.')
+    app.session.logger.info(f'[scores] -> Oldsu score migration complete.')
