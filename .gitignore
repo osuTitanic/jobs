@@ -185,3 +185,6 @@ fabric.properties
 
 # titanic data folder
 .data
+
+# csv data files
+*.csv
