@@ -34,20 +34,3 @@ def change_country(user_id: int, new_country: str) -> None:
             )
 
     app.session.logger.info(f'[users] -> Done.')
-
-def avatar_migration() -> None:
-    with app.session.database.managed_session() as session:
-        for user in users.fetch_all(session=session):
-            if user.avatar_hash:
-                continue
-            
-            avatar = app.session.storage.get_avatar(user.id)
-            
-            if not avatar:
-                continue
-        
-            users.update(
-                user.id,
-                {'avatar_hash': hashlib.md5(avatar).hexdigest()},
-                session=session
-            )
