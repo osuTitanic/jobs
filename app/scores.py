@@ -5,6 +5,7 @@ from app.common.database import DBScore
 from collections import defaultdict
 from sqlalchemy import or_
 
+import csv
 import app
 
 def recalculate_pp_status(user_id: int, mode: int) -> None:
@@ -196,5 +197,43 @@ def recalculate_rx_scores() -> None:
                 {'total_score': calculate_rx_score(score, score.beatmap)},
                 session=session
             )
+
+    app.session.logger.info('[users] -> Done.')
+
+def score_fixes(csv_filename: str) -> None:
+    """Apply fixes to scores based on a CSV file"""
+    app.session.logger.info(f'[users] -> Applying score fixes from {csv_filename}...')
+
+    with app.session.database.managed_session() as session:
+        with open(csv_filename, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
+
+            for row in reader:
+                user_id = int(row['userid'])
+                score_id = int(row['scoreid'])
+                new_total_score = int(row['score'])
+                new_max_combo = int(row['maxcombo'])
+
+                score = scores.fetch_by_id(score_id, session=session)
+
+                if not score:
+                    app.session.logger.warning(f'[users] -> Score {score_id} not found.')
+                    continue
+                
+                if score.user_id != user_id:
+                    app.session.logger.warning(f'[users] -> Score {score_id} does not belong to user {user_id}.')
+                    continue
+
+                scores.update(
+                    score.id,
+                    {
+                        'total_score': new_total_score,
+                        'max_combo': new_max_combo
+                    },
+                    session=session
+                )
+                app.session.logger.info(
+                    f'[users] -> Updated score {score_id} to {new_total_score} score with {new_max_combo} max combo.'
+                )
 
     app.session.logger.info('[users] -> Done.')
