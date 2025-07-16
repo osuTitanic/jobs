@@ -271,43 +271,17 @@ def calculate_accuracy(score: DBScore) -> float:
 
     return 0.0
 
-def process_score(score_data: dict, session: Session) -> None:
-    if not (beatmap := beatmaps.fetch_by_checksum(score_data['beatmap_hash'], session=session)):
-        app.session.logger.warning(f'[scores] -> Beatmap not found for score: {score_data["beatmap_hash"]}')
+def upload_replay(score_data: dict, session: Session) -> None:
+    if not score_data['replay_checksum']:
+        app.session.logger.warning(f'[scores] -> Score with id {score_data["id"]} has no replay checksum.')
         return
 
-    score_object = DBScore(
-        beatmap_id=beatmap.id,
-        user_id=score_data['user_id'],
-        client_version=score_data['version'],
-        checksum=score_data['submit_hash'],
-        mode=score_data['mode'],
-        pp=0.0,
-        ppv1=0.0,
-        acc=0.0,
-        total_score=score_data['total_score'],
-        max_combo=score_data['max_combo'],
-        mods=score_data['mods'],
-        perfect=score_data['perfect'],
-        n300=score_data['hit300'],
-        n100=score_data['hit100'],
-        n50=score_data['hit50'],
-        nMiss=score_data['hit_miss'],
-        nGeki=score_data['hit_geki'],
-        nKatu=score_data['hit_katu'],
-        grade=score_data['grade'],
-        status_pp=2 if score_data['passed'] else 0,
-        status_score=2 if score_data['passed'] else 0,
-        pinned=False,
-        hidden=not score_data['replay_data'],
-        submitted_at=score_data['submitted_at'],
-        failtime=0 if not score_data['passed'] else None,
-        replay_md5=score_data['replay_checksum']
-    )
-    score_object.acc = calculate_accuracy(score_object)
-    score_object.pp = performance.calculate_ppv2(score_object)
-    score_object.ppv1 = performance.calculate_ppv1(score_object, session)
-    scores.create(score_object, session=session)
+    if not (score := scores.fetch_by_replay_checksum(score_data['replay_checksum'], session=session)):
+        app.session.logger.warning(f'[scores] -> Score with checksum {score_data["replay_checksum"]} not found.')
+        return
+
+    app.session.storage.upload_replay(score.id, score_data['replay_data'])
+    app.session.logger.info(f'[scores] -> Uploaded replay for score "{score.id}"')
 
 def oldsu_score_migration(csv_filename: str) -> None:
     app.session.logger.info(f'[scores] -> Migrating oldsu scores from {csv_filename}...')
@@ -334,7 +308,8 @@ def oldsu_score_migration(csv_filename: str) -> None:
                     hashlib.md5(score_data['replay_data']).hexdigest()
                     if score_data['replay_data'] else None
                 )
-                process_score(score_data, session)
+
+                upload_replay(score_data, session)
                 user_ids.add(score_data['user_id'])
 
     app.session.logger.info(f'[scores] -> Migrated scores.')
