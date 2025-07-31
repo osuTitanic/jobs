@@ -27,8 +27,8 @@ FROZEN_RANK_UPDATES = eval(os.environ.get('FROZEN_RANK_UPDATES', 'False').capita
 S3_ENABLED = eval(os.environ.get('ENABLE_S3', 'True').capitalize())
 DEBUG = eval(os.environ.get('DEBUG', 'False').capitalize())
 
-EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER')
-EMAIL_SENDER = os.environ.get('EMAIL_SENDER')
+EMAIL_PROVIDER = os.environ.get('EMAIL_PROVIDER', '')
+EMAIL_SENDER = os.environ.get('EMAIL_SENDER', '')
 EMAIL_DOMAIN = EMAIL_SENDER.split('@')[-1]
 EMAILS_ENABLED = bool(EMAIL_PROVIDER and EMAIL_SENDER)
 
