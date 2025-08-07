@@ -47,15 +47,11 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
         best_scores.sort(key=lambda x: x.pp, reverse=True)
 
         if best_scores:
-            rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
-            ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
             vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
 
             # Update performance
             user_stats.pp = calculate_weighted_pp(best_scores)
             user_stats.pp_vn = calculate_weighted_pp(vn_scores)
-            user_stats.pp_rx = calculate_weighted_pp(rx_scores)
-            user_stats.pp_ap = calculate_weighted_pp(ap_scores)
 
             leaderboards.update(
                 user_stats,
@@ -73,8 +69,6 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
                 {
                     'pp': user_stats.pp,
                     'pp_vn': user_stats.pp_vn,
-                    'pp_rx': user_stats.pp_rx,
-                    'pp_ap': user_stats.pp_ap,
                     'rank': user_stats.rank
                 },
                 session=session
