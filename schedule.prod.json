@@ -11,7 +11,7 @@
     },
     {
         "name": "update_ranks",
-        "interval": 1800,
+        "interval": 900,
         "args": []
     },
     {
