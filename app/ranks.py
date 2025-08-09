@@ -20,12 +20,19 @@ def update_ranks() -> None:
                     user_stats.mode
                 )
 
+                peak_rank = histories.fetch_peak_global_rank(
+                    user.id,
+                    user_stats.mode,
+                    session=session
+                )
+
                 if user_stats.rank != global_rank:
                     # Database rank desynced from redis
                     stats.update(
                         user.id,
                         user_stats.mode,
                         {
+                            'peak_rank': peak_rank,
                             'rank': global_rank
                         },
                         session=session
