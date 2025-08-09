@@ -20,13 +20,13 @@ def update_ranks() -> None:
                     user_stats.mode
                 )
 
-                peak_rank = histories.fetch_peak_global_rank(
-                    user.id,
-                    user_stats.mode,
-                    session=session
-                )
-
                 if user_stats.rank != global_rank:
+                    peak_rank = histories.fetch_peak_global_rank(
+                        user.id,
+                        user_stats.mode,
+                        session=session
+                    )
+
                     # Database rank desynced from redis
                     stats.update(
                         user.id,
@@ -38,6 +38,7 @@ def update_ranks() -> None:
                         session=session
                     )
                     user_stats.rank = global_rank
+                    user_stats.peak_rank = peak_rank
 
                     if not config.FROZEN_RANK_UPDATES:
                         # Update rank history
@@ -46,6 +47,18 @@ def update_ranks() -> None:
                             user.country,
                             session=session
                         )
+
+                elif user_stats.peak_rank <= 0:
+                    peak_rank = histories.fetch_peak_global_rank(
+                        user.id,
+                        user_stats.mode,
+                        session=session
+                    )
+                    stats.update(
+                        user.id, user_stats.mode,
+                        {'peak_rank': peak_rank},
+                        session=session
+                    )
 
             app.session.logger.info(f'[ranks] -> Updated {user.name}.')
 
