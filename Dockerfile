@@ -30,4 +30,5 @@ ENV PYTHONUNBUFFERED=1
 # Copy source code
 COPY . .
 
+STOPSIGNAL SIGINT
 ENTRYPOINT [ "python3", "main.py" ]
