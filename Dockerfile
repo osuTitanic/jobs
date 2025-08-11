@@ -28,6 +28,7 @@ RUN python -m compileall -q app
 ENV PYTHONUNBUFFERED=1
 
 # Copy source code
+WORKDIR /jobs
 COPY . .
 
 STOPSIGNAL SIGINT
