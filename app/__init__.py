@@ -29,6 +29,7 @@ TASKS = [
     users.change_country,
     users.fix_replay_history_for_user,
     users.fix_play_history_for_user,
+    users.fix_historical_data,
     scores.recalculate_pp_status,
     scores.recalculate_score_status,
     scores.recalculate_statuses_all,

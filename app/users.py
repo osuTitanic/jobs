@@ -39,6 +39,12 @@ def change_country(user_id: int, new_country: str) -> None:
 
     app.session.logger.info(f'[users] -> Done.')
 
+def fix_historical_data() -> None:
+    for user in users.fetch_all():
+        for mode in range(4):
+            fix_replay_history_for_user(user.id, mode)
+            fix_play_history_for_user(user.id, mode)
+
 def fix_replay_history_for_user(user_id: int, mode: int) -> None:
     """Ensure that there are no missing entries in the user's replay history"""
     with app.session.database.managed_session() as session:
