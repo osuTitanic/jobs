@@ -33,13 +33,18 @@ def recalculate_pp_status(user_id: int, mode: int) -> None:
             .all()
 
         if not user_scores:
-            app.session.logger.warning(f'[users] -> User "{user_id}" has no scores.')
+            app.session.logger.warning(f'[users] -> User "{user_id}" has no scores ({mode}).')
             return
 
         # Sort scores by beatmap id
         scores_dict = defaultdict(list)
 
         for score in user_scores:
+            if score.relaxing:
+                # Exclude rx/ap from global pp rankings
+                scores.update(score.id, {'status_pp': 2}, session=session)
+                continue
+
             scores_dict[score.beatmap_id].append(score)
 
         for beatmap_id, beatmap_scores in scores_dict.items():
@@ -192,11 +197,11 @@ def recalculate_rx_scores() -> None:
             )) \
             .order_by(DBScore.status_pp.desc()) \
             .all()
-        
+
         app.session.logger.info(
             f'[users] -> Recalculating {len(user_scores)} rx/ap scores...'
         )
-        
+
         for score in user_scores:
             scores.update(
                 score.id,

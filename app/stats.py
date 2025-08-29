@@ -71,19 +71,12 @@ def recalculate_stats(user_id: int, mode: int) -> None:
             app.session.logger.warning(f'[stats] -> No scores found for user "{user_id}" in mode "{mode}".')
             return
 
-        rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
-        ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
-        vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
-
         session.query(DBStats) \
             .filter(DBStats.user_id == user_id) \
             .filter(DBStats.mode == mode) \
             .update({
-                "acc": calculate_weighted_acc(best_scores),
                 "pp": calculate_weighted_pp(best_scores),
-                "pp_vn": calculate_weighted_pp(vn_scores),
-                "pp_rx": calculate_weighted_pp(rx_scores),
-                "pp_ap": calculate_weighted_pp(ap_scores),
+                "acc": calculate_weighted_acc(best_scores),
                 "rscore": sum(score.total_score for score in best_scores_by_score)
             })
         session.commit()
@@ -131,7 +124,7 @@ def recalculate_stats(user_id: int, mode: int) -> None:
             f'[stats] -> Recalculated stats for user "{user_id}" in mode "{mode}".'
         )
 
-        del best_scores, best_scores_by_score, rx_scores, ap_scores, vn_scores
+        del best_scores, best_scores_by_score
 
 def recalculate_stats_all() -> None:
     with app.session.database.managed_session() as session:
@@ -231,15 +224,8 @@ def restore_stats(user_id: int, remove=False) -> None:
                 session=session
             )
 
-            rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
-            ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
-            vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
-
             user_stats.acc = calculate_weighted_acc(best_scores)
             user_stats.pp = calculate_weighted_pp(best_scores)
-            user_stats.pp_vn = calculate_weighted_pp(vn_scores)
-            user_stats.pp_rx = calculate_weighted_pp(rx_scores)
-            user_stats.pp_ap = calculate_weighted_pp(ap_scores)
             user_stats.rscore = sum(score.total_score for score in best_scores_by_score)
 
             # Update grades

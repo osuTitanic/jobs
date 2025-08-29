@@ -20,6 +20,14 @@ def calculate_weighted_pp(scores: List[DBScore]) -> float:
     bonus_pp = 416.6667 * (1 - 0.9994 ** len(scores))
     return weighted_pp + bonus_pp
 
+def calculate_weighted_acc(scores: List[DBScore]) -> float:
+    if not scores:
+        return 0
+
+    weighted_acc = sum(score.acc * 0.95**index for index, score in enumerate(scores))
+    bonus_acc = 100.0 / (20 * (1 - 0.95 ** len(scores)))
+    return (weighted_acc * bonus_acc) / 100
+
 def recalculate_ppv2_for_user(user: DBUser, session: Session):
     user.stats.sort(key=lambda x: x.mode)
 
@@ -47,15 +55,9 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
         best_scores.sort(key=lambda x: x.pp, reverse=True)
 
         if best_scores:
-            rx_scores = [score for score in best_scores if (score.mods & 128) != 0]
-            ap_scores = [score for score in best_scores if (score.mods & 8192) != 0]
-            vn_scores = [score for score in best_scores if (score.mods & 128) == 0 and (score.mods & 8192) == 0]
-
-            # Update performance
+            # Update pp & acc
             user_stats.pp = calculate_weighted_pp(best_scores)
-            user_stats.pp_vn = calculate_weighted_pp(vn_scores)
-            user_stats.pp_rx = calculate_weighted_pp(rx_scores)
-            user_stats.pp_ap = calculate_weighted_pp(ap_scores)
+            user_stats.acc = calculate_weighted_acc(best_scores)
 
             leaderboards.update(
                 user_stats,
@@ -72,10 +74,8 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
                 user_stats.mode,
                 {
                     'pp': user_stats.pp,
-                    'pp_vn': user_stats.pp_vn,
-                    'pp_rx': user_stats.pp_rx,
-                    'pp_ap': user_stats.pp_ap,
-                    'rank': user_stats.rank
+                    'acc': user_stats.acc,
+                    'rank': user_stats.rank,
                 },
                 session=session
             )
