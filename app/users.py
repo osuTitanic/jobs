@@ -79,6 +79,11 @@ def fix_replay_history_for_user(user_id: int, mode: int) -> None:
                 missing_entry = DBReplayHistory(user.id, mode)
                 missing_entry.year = last_entry_date.year
                 missing_entry.month = last_entry_date.month
+                missing_entry.created_at = datetime(
+                    year=last_entry_date.year,
+                    month=last_entry_date.month,
+                    day=1
+                )
                 session.add(missing_entry)
 
                 app.session.logger.info(
@@ -118,6 +123,11 @@ def fix_play_history_for_user(user_id: int, mode: int) -> None:
                 missing_entry = DBPlayHistory(user.id, mode)
                 missing_entry.year = last_entry_date.year
                 missing_entry.month = last_entry_date.month
+                missing_entry.created_at = datetime(
+                    year=last_entry_date.year,
+                    month=last_entry_date.month,
+                    day=1
+                )
                 session.add(missing_entry)
                 session.commit()
 
