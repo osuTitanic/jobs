@@ -23,5 +23,10 @@
         "name": "update_beatmap_statuses",
         "interval": 300,
         "args": []
+    },
+    {
+        "name": "fix_historical_data",
+        "interval": 604800,
+        "args": []
     }
 ]
