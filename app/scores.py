@@ -211,6 +211,17 @@ def recalculate_rx_scores() -> None:
 
     app.session.logger.info('[users] -> Done.')
 
+def rx_score_migration() -> None:
+    with app.session.database.managed_session() as session:
+        session.query(DBScore) \
+            .filter(DBScore.status_pp > 1) \
+            .filter(or_(
+                DBScore.mods.op('&')(128) != 0,
+                DBScore.mods.op('&')(8192) != 0
+            )) \
+            .update({'status_pp': 2}, synchronize_session=False)
+        session.commit()
+
 def oldsu_score_migration(csv_filename: str) -> None:
     app.session.logger.info(f'[scores] -> Migrating oldsu scores from {csv_filename}...')
     
