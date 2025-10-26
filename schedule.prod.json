@@ -28,5 +28,10 @@
         "name": "fix_historical_data",
         "interval": 86400,
         "args": []
+    },
+    {
+        "name": "unread_chat_message_notifications",
+        "interval": 1200,
+        "args": []
     }
 ]
