@@ -8,6 +8,7 @@ from threading import Thread, Event
 from . import session
 from . import common
 
+from . import notifications
 from . import beatmaps
 from . import scores
 from . import users
@@ -19,6 +20,7 @@ from . import ppv1
 import time
 
 TASKS = [
+    notifications.unread_chat_message_notifications,
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
