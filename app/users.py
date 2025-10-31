@@ -1,10 +1,11 @@
 
-from app.common.database.objects import DBReplayHistory, DBPlayHistory
+from app.common.database.objects import DBReplayHistory, DBPlayHistory, DBScore
 from app.common.database import users, histories
 from app.common.cache import leaderboards
 
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 import hashlib
 import app
@@ -137,3 +138,46 @@ def fix_play_history_for_user(user_id: int, mode: int) -> None:
                 )
 
             last_entry = entry
+
+def recreate_play_history() -> None:
+    for user in users.fetch_all():
+        for mode in range(4):
+            recreate_play_history_for_user(user.id, mode)
+
+def recreate_play_history_for_user(user_id: int, mode: int) -> None:
+    """Recreate the play history for a user from their plays"""
+    with app.session.database.managed_session() as session:
+        if not (user := users.fetch_by_id(user_id, session=session)):
+            app.session.logger.warning(f'[users] -> User "{user_id}" was not found.')
+            return
+
+        app.session.logger.info(f'[users] -> Recreating play history for user "{user.name}" ({mode})...')
+        entries = defaultdict(int)
+
+        score_timestamps = session.query(DBScore.submitted_at) \
+            .filter(DBScore.hidden == False) \
+            .filter(DBScore.user_id == user.id) \
+            .filter(DBScore.mode == mode) \
+            .all()
+
+        for (submitted_at,) in score_timestamps:
+            year = submitted_at.year
+            month = submitted_at.month
+            entries[(year, month)] += 1
+
+        # Clear existing play history for this user and mode
+        session.query(DBPlayHistory) \
+            .filter(DBPlayHistory.user_id == user.id) \
+            .filter(DBPlayHistory.mode == mode) \
+            .delete()
+
+        for (year, month), play_count in entries.items():
+            entry = DBPlayHistory(user.id, mode, play_count)
+            entry.created_at = datetime(year=year, month=month, day=1)
+            entry.year = year
+            entry.month = month
+            session.add(entry)
+
+        session.commit()
+
+    app.session.logger.info(f'[users] -> Done.')
