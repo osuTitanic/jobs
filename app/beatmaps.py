@@ -11,6 +11,7 @@ from app.common.database import (
     posts
 )
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from slider import Beatmap
@@ -337,7 +338,7 @@ def recalculate_beatmap_difficulty():
 
             current_offset += 1
 
-def update_missing_beatmapset_metadata():
+def update_missing_beatmap_metadata_all():
     with app.session.database.managed_session() as session:
         app.session.logger.info(
             '[beatmaps] -> Updating missing beatmapset metadata'
@@ -353,40 +354,77 @@ def update_missing_beatmapset_metadata():
         )
 
         for beatmap in target_beatmaps:
-            beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+            update_missing_beatmap_metadata(beatmap, session)
 
-            if not beatmap_file:
-                app.session.logger.warning(
-                    f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
-                )
-                continue
+def update_missing_beatmap_metadata_threaded(workers: int = '10'):
+    with app.session.database.managed_session() as session:
+        app.session.logger.info(
+            f'[beatmaps] -> Updating missing beatmapset metadata ({workers} workers)'
+        )
 
-            try:
-                slider_data = Beatmap.parse(beatmap_file.decode('utf-8', errors='ignore'))
-            except Exception as e:
-                app.session.logger.warning(
-                    f'[beatmaps] -> Failed to parse beatmap file for beatmap {beatmap.id}',
-                    exc_info=e
-                )
-                continue
+        target_beatmaps = session.query(DBBeatmap) \
+            .filter(DBBeatmap.slider_multiplier <= 0) \
+            .order_by(DBBeatmap.status.desc()) \
+            .all()
 
-            session.query(DBBeatmap) \
-                .filter(DBBeatmap.id == beatmap.id) \
-                .update({'slider_multiplier': slider_data.slider_multiplier})
-            session.commit()
-            
-            app.session.logger.info(
-                f'[beatmaps] -> Updated metadata for beatmap {beatmap.id}'
-            )
-            
-            if beatmap.drain_length > 0:
-                continue
-            
-            drain_length = calculate_beatmap_drain_length(slider_data)
-            session.query(DBBeatmap) \
-                .filter(DBBeatmap.id == beatmap.id) \
-                .update({'drain_length': drain_length})
-            session.commit()
+        app.session.logger.info(
+            f'[beatmaps] -> Found {len(target_beatmaps)} beatmaps to update'
+        )
+
+        with ThreadPoolExecutor(max_workers=int(workers)) as executor:
+            futures = [
+                executor.submit(update_missing_beatmap_metadata, beatmap, session)
+                for beatmap in target_beatmaps
+            ]
+
+            for future in futures:
+                try:
+                    future.result()
+                except Exception as e:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Failed to update beatmap metadata',
+                        exc_info=e
+                    )
+
+def update_missing_beatmap_metadata(beatmap: DBBeatmap, session: Session):
+    beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+    if not beatmap_file:
+        app.session.logger.warning(
+            f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
+        )
+        return
+
+    try:
+        slider_data = Beatmap.parse(beatmap_file.decode('utf-8', errors='ignore'))
+    except Exception as e:
+        app.session.logger.warning(
+            f'[beatmaps] -> Failed to parse beatmap file for beatmap {beatmap.id}',
+            exc_info=e
+        )
+        return
+
+    session.query(DBBeatmap) \
+        .filter(DBBeatmap.id == beatmap.id) \
+        .update({'slider_multiplier': slider_data.slider_multiplier})
+    session.commit()
+
+    app.session.logger.info(
+        f'[beatmaps] -> Updated metadata for beatmap {beatmap.id}'
+    )
+
+    if beatmap.drain_length > 0:
+        return
+
+    drain_length = calculate_beatmap_drain_length(slider_data)
+    session.query(DBBeatmap) \
+        .filter(DBBeatmap.id == beatmap.id) \
+        .update({'drain_length': drain_length})
+    session.commit()
+
+    app.session.logger.info(
+        f'[beatmaps] -> Updated drain length for beatmap {beatmap.id} ({drain_length}s)'
+    )
 
 # Reference:
 # https://github.com/ppy/osu/blob/master/osu.Game/Beatmaps/Timing/BreakPeriod.cs
