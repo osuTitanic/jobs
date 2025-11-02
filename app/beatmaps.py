@@ -421,7 +421,7 @@ def update_missing_beatmap_metadata(beatmap: DBBeatmap, session: Session = ...):
     drain_length = calculate_beatmap_drain_length(slider_data)
     session.query(DBBeatmap) \
         .filter(DBBeatmap.id == beatmap.id) \
-        .update({'drain_length': drain_length})
+        .update({'drain_length': round(drain_length / 1000)})
     session.commit()
 
     app.session.logger.info(
