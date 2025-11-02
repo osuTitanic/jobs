@@ -345,6 +345,7 @@ def update_missing_beatmapset_metadata():
 
         target_beatmaps = session.query(DBBeatmap) \
             .filter(DBBeatmap.slider_multiplier <= 0) \
+            .order_by(DBBeatmap.status.desc()) \
             .all()
 
         app.session.logger.info(
