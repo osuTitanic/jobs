@@ -2,10 +2,11 @@
 from app.common.constants import DatabaseStatus, ScoreStatus
 from app.common.database import DBBeatmapset, DBBeatmap
 from app.common.helpers import performance
-from app.common.database import (
+from app.common.database.repositories import (
     nominations,
     beatmapsets,
     beatmaps,
+    wrapper,
     scores,
     topics,
     posts
@@ -371,22 +372,23 @@ def update_missing_beatmap_metadata_threaded(workers: int = '10'):
             f'[beatmaps] -> Found {len(target_beatmaps)} beatmaps to update'
         )
 
-        with ThreadPoolExecutor(max_workers=int(workers)) as executor:
-            futures = [
-                executor.submit(update_missing_beatmap_metadata, beatmap, session)
-                for beatmap in target_beatmaps
-            ]
+    with ThreadPoolExecutor(max_workers=int(workers)) as executor:
+        futures = [
+            executor.submit(update_missing_beatmap_metadata, beatmap)
+            for beatmap in target_beatmaps
+        ]
 
-            for future in futures:
-                try:
-                    future.result()
-                except Exception as e:
-                    app.session.logger.warning(
-                        f'[beatmaps] -> Failed to update beatmap metadata',
-                        exc_info=e
-                    )
+        for future in futures:
+            try:
+                future.result()
+            except Exception as e:
+                app.session.logger.warning(
+                    f'[beatmaps] -> Failed to update beatmap metadata',
+                    exc_info=e
+                )
 
-def update_missing_beatmap_metadata(beatmap: DBBeatmap, session: Session):
+@wrapper.session_wrapper
+def update_missing_beatmap_metadata(beatmap: DBBeatmap, session: Session = ...):
     beatmap_file = app.session.storage.get_beatmap(beatmap.id)
 
     if not beatmap_file:
