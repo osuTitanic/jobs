@@ -95,7 +95,7 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
         for score in all_scores:
             scores.update(
                 score.id,
-                {'ppv1': performance.calculate_ppv1(score)},
+                {'ppv1': performance.calculate_ppv1(score, session)},
                 session=session
             )
             app.session.logger.info(
