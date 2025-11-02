@@ -8,3 +8,4 @@ sendgrid==6.12.5
 boto3-type-annotations-with-docs==0.3.1
 boto3<2
 psycopg2-binary==2.9.11
+slider==0.8.3

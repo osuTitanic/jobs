@@ -13,6 +13,7 @@ from app.common.database import (
 
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from slider import Beatmap
 
 import config
 import app
@@ -335,3 +336,107 @@ def recalculate_beatmap_difficulty():
                 session.commit()
 
             current_offset += 1
+
+def update_missing_beatmapset_metadata():
+    with app.session.database.managed_session() as session:
+        app.session.logger.info(
+            '[beatmaps] -> Updating missing beatmapset metadata'
+        )
+
+        target_beatmaps = session.query(DBBeatmap) \
+            .filter(DBBeatmap.slider_multiplier <= 0) \
+            .all()
+
+        app.session.logger.info(
+            f'[beatmaps] -> Found {len(target_beatmaps)} beatmaps to update'
+        )
+
+        for beatmap in target_beatmaps:
+            beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+            if not beatmap_file:
+                app.session.logger.warning(
+                    f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
+                )
+                continue
+
+            try:
+                slider_data = Beatmap.parse(beatmap_file.decode('utf-8', errors='ignore'))
+            except Exception as e:
+                app.session.logger.warning(
+                    f'[beatmaps] -> Failed to parse beatmap file for beatmap {beatmap.id}',
+                    exc_info=e
+                )
+                continue
+
+            session.query(DBBeatmap) \
+                .filter(DBBeatmap.id == beatmap.id) \
+                .update({'slider_multiplier': slider_data.slider_multiplier})
+            session.commit()
+            
+            app.session.logger.info(
+                f'[beatmaps] -> Updated metadata for beatmap {beatmap.id}'
+            )
+            
+            if beatmap.drain_length > 0:
+                continue
+            
+            drain_length = calculate_beatmap_drain_length(slider_data)
+            session.query(DBBeatmap) \
+                .filter(DBBeatmap.id == beatmap.id) \
+                .update({'drain_length': drain_length})
+            session.commit()
+
+# Reference:
+# https://github.com/ppy/osu/blob/master/osu.Game/Beatmaps/Timing/BreakPeriod.cs
+
+# The minimum gap between the start of the break and the previous object.
+gap_before_break = 200
+
+# The minimum gap between the end of the break and the next object.
+gap_after_break = 450
+
+# The minimum duration required for a break to have any effect.
+min_break_duration = 650
+
+# The minimum required duration of a gap between two objects such that a break can be placed between them.
+minimum_gap = gap_before_break + min_break_duration + gap_after_break
+
+def calculate_beatmap_total_length(beatmap: Beatmap) -> int:
+    """Calculate the total length of a beatmap from its hit objects"""
+    hit_objects = beatmap.hit_objects()
+
+    if len(hit_objects) <= 1:
+        return 0
+
+    last_object = hit_objects[-1].time.total_seconds() * 1000
+    first_object = hit_objects[0].time.total_seconds() * 1000
+    return last_object - first_object
+
+def calculate_beatmap_drain_length(beatmap: Beatmap) -> int:
+    """Calculate the drain length of a beatmap from its hit objects"""
+    hit_objects = beatmap.hit_objects()
+
+    if len(hit_objects) <= 1:
+        return 0
+
+    # Identify every break in the beatmap
+    # and subtract it from the total length
+    total_length = calculate_beatmap_total_length(beatmap)
+    break_deltas = []
+
+    for index, hit_object in enumerate(hit_objects):
+        if index <= 0:
+            continue
+        
+        previous_object = hit_objects[index - 1]
+        delta_time = hit_object.time - previous_object.time
+        delta_time_seconds = delta_time.total_seconds() * 1000
+        
+        if delta_time_seconds <= minimum_gap:
+            continue
+
+        break_deltas.append(delta_time_seconds - (gap_before_break + gap_after_break))
+        
+    total_break_time = sum(break_deltas)
+    return max(total_length - total_break_time, 0)
