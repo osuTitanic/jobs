@@ -398,7 +398,7 @@ def update_missing_beatmap_metadata(beatmap: DBBeatmap, session: Session = ...):
         return
 
     try:
-        slider_data = Beatmap.parse(beatmap_file.decode('utf-8', errors='ignore'))
+        slider_data = Beatmap.parse(beatmap_file.decode('utf-8-sig', errors='ignore'))
     except Exception as e:
         app.session.logger.warning(
             f'[beatmaps] -> Failed to parse beatmap file for beatmap {beatmap.id}',
