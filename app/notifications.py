@@ -59,7 +59,7 @@ def generate_unread_chat_notification(user_id: int, session: Session) -> Tuple[s
     if len(username_list) <= 1:
         return (
             f"You have {total_messages} unread messages from {username_list}",
-            f'/account/chat?target={username_list[0][0]}'
+            f'/account/chat?target={usernames_sorted[0][0]}'
         )
 
     # Replace last ", " with " and "
@@ -71,5 +71,5 @@ def generate_unread_chat_notification(user_id: int, session: Session) -> Tuple[s
 
     return (
         f"You have {total_messages} unread messages from {username_list}",
-        f'/account/chat?target={username_list[0][0]}'
+        f'/account/chat?target={usernames_sorted[0][0]}'
     )
