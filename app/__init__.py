@@ -21,8 +21,6 @@ import time
 
 TASKS = [
     notifications.unread_chat_message_notifications,
-    beatmaps.update_missing_beatmap_metadata_threaded,
-    beatmaps.update_missing_beatmap_metadata_all,
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
