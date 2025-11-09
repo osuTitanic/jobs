@@ -56,7 +56,7 @@ def generate_unread_chat_notification(user_id: int, session: Session) -> Tuple[s
     )
     username_list = ', '.join(username for _, username in usernames_sorted)
 
-    if len(username_list) <= 1:
+    if len(usernames_sorted) <= 1:
         return (
             f"You have {total_messages} unread messages from {username_list}",
             f'/account/chat?target={usernames_sorted[0][0]}'
