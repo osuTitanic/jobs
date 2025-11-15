@@ -1,5 +1,5 @@
 
-from app.common.constants import DatabaseStatus, ScoreStatus
+from app.common.constants import BeatmapStatus, ScoreStatus
 from app.common.database import DBBeatmapset, DBBeatmap
 from app.common.helpers import performance
 from app.common.database.repositories import (
@@ -24,7 +24,7 @@ def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
     if not beatmapset.topic_id:
         return
 
-    if status > DatabaseStatus.Pending:
+    if status > BeatmapStatus.Pending:
         topics.update(
             beatmapset.topic_id,
             {'forum_id': 8},
@@ -36,7 +36,7 @@ def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
             session=session
         )
 
-    elif status == DatabaseStatus.WIP:
+    elif status == BeatmapStatus.WIP:
         topics.update(
             beatmapset.topic_id,
             {'forum_id': 10},
@@ -48,7 +48,7 @@ def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
             session=session
         )
 
-    elif status == DatabaseStatus.Graveyard:
+    elif status == BeatmapStatus.Graveyard:
         topics.update(
             beatmapset.topic_id,
             {'forum_id': 12},
@@ -78,7 +78,7 @@ def update_beatmap_icon(
     previous_status: int,
     session: Session
 ) -> None:
-    if status in (DatabaseStatus.Ranked, DatabaseStatus.Qualified, DatabaseStatus.Loved):
+    if status in (BeatmapStatus.Ranked, BeatmapStatus.Qualified, BeatmapStatus.Loved):
         # Set icon to heart
         topics.update(
             beatmapset.topic_id,
@@ -87,7 +87,7 @@ def update_beatmap_icon(
         )
         return
 
-    if status == DatabaseStatus.Approved:
+    if status == BeatmapStatus.Approved:
         # Set icon to flame
         topics.update(
             beatmapset.topic_id,
@@ -97,10 +97,10 @@ def update_beatmap_icon(
         return
 
     ranked_statuses = (
-        DatabaseStatus.Qualified,
-        DatabaseStatus.Approved,
-        DatabaseStatus.Ranked,
-        DatabaseStatus.Loved
+        BeatmapStatus.Qualified,
+        BeatmapStatus.Approved,
+        BeatmapStatus.Ranked,
+        BeatmapStatus.Loved
     )
 
     if previous_status in ranked_statuses:
@@ -112,7 +112,7 @@ def update_beatmap_icon(
         )
         return
 
-    if status == DatabaseStatus.Graveyard:
+    if status == BeatmapStatus.Graveyard:
         has_nomination = nominations.fetch_by_beatmapset(
             beatmapset.id,
             session=session
@@ -165,9 +165,9 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
     # Map will be set to "Approved" if drain time
     # exceeds 5 minutes, otherwise "Ranked"
     status = (
-        DatabaseStatus.Ranked
+        BeatmapStatus.Ranked
         if max_drain < 5*60 else
-        DatabaseStatus.Approved
+        BeatmapStatus.Approved
     )
 
     update_beatmap_icon(
@@ -214,26 +214,26 @@ def handle_pending_set(beatmapset: DBBeatmapset, session: Session):
 
     update_beatmap_icon(
         beatmapset,
-        DatabaseStatus.Graveyard.value,
+        BeatmapStatus.Graveyard.value,
         beatmapset.status,
         session=session
     )
 
     move_beatmap_topic(
         beatmapset,
-        DatabaseStatus.Graveyard.value,
+        BeatmapStatus.Graveyard.value,
         session=session
     )
 
     beatmapsets.update(
         beatmapset.id,
-        {'status': DatabaseStatus.Graveyard.value},
+        {'status': BeatmapStatus.Graveyard.value},
         session=session
     )
 
     beatmaps.update_by_set_id(
         beatmapset.id,
-        {'status': DatabaseStatus.Graveyard.value},
+        {'status': BeatmapStatus.Graveyard.value},
         session=session
     )
 
@@ -253,7 +253,7 @@ def update_beatmap_statuses():
         )
 
         qualified_sets = beatmapsets.fetch_by_status(
-            DatabaseStatus.Qualified.value,
+            BeatmapStatus.Qualified.value,
             session=session
         )
 
@@ -268,7 +268,7 @@ def update_beatmap_statuses():
         )
 
         pending_sets = beatmapsets.fetch_by_status(
-            DatabaseStatus.Pending.value,
+            BeatmapStatus.Pending.value,
             session=session
         )
 
@@ -279,7 +279,7 @@ def update_beatmap_statuses():
             )
 
         wip_sets = beatmapsets.fetch_by_status(
-            DatabaseStatus.WIP.value,
+            BeatmapStatus.WIP.value,
             session=session
         )
 
