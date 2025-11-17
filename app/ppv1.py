@@ -1,5 +1,5 @@
 from app.common.database import users, stats, scores, histories
-from app.common.database.objects import DBUser
+from app.common.database.objects import DBUser, DBScore
 from app.common.helpers import performance
 from app.common.cache import leaderboards
 from sqlalchemy.orm import Session
@@ -8,7 +8,6 @@ from typing import List
 import multiprocessing
 import app.session
 import config
-import math
 import os
 
 def update_ppv1() -> None:
@@ -17,7 +16,7 @@ def update_ppv1() -> None:
         app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
 
         user_list = users.fetch_all(session=session)
-        user_list.sort(key=lambda user: (user.stats[0].ppv1 if user.stats else math.inf), reverse=True)
+        user_list.sort(key=resolve_ppv1, reverse=True)
 
         for user in user_list:
             update_ppv1_for_user(user, session)
@@ -74,7 +73,7 @@ def update_ppv1_multiprocessing(workers: str = '10') -> None:
             app.session.logger.info(f'[ppv1] -> Updating ppv1 calculations ({workers} workers)...')
 
             user_list = users.fetch_all(session=session)
-            user_list.sort(key=lambda user: (user.stats[0].ppv1 if user.stats else math.inf), reverse=True)
+            user_list.sort(key=resolve_ppv1, reverse=True)
 
             pool.starmap(
                 update_ppv1_for_user_no_session,
@@ -104,9 +103,9 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
 
 def recalculate_ppv1_all_scores(min_status: str = '-1', workers: int = '10') -> None:
     with app.session.database.managed_session() as session:
-        all_scores = session.query(scores.DBScore) \
-            .filter(scores.DBScore.status_pp > int(min_status)) \
-            .order_by(scores.DBScore.id) \
+        all_scores = session.query(DBScore) \
+            .filter(DBScore.status_pp > int(min_status)) \
+            .order_by(DBScore.ppv1.desc()) \
             .all()
 
         app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
@@ -124,6 +123,13 @@ def recalculate_ppv1_all_scores(min_status: str = '-1', workers: int = '10') -> 
             )
 
         app.session.logger.info('[ppv1] -> Done.')
+
+def resolve_ppv1(user: DBUser) -> float:
+    if not user.stats:
+        return 0
+
+    user.stats.sort(key=lambda s: s.mode)
+    return user.stats[0].ppv1
 
 def chunks(list: list, amount: int):
     for i in range(0, len(list), amount):
