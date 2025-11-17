@@ -338,3 +338,59 @@ def recalculate_beatmap_difficulty():
                 session.commit()
 
             current_offset += 1
+
+def populate_missing_metadata():
+    with app.session.database.managed_session() as session:
+        app.session.logger.info(
+            '[beatmaps] -> Populating missing beatmap metadata'
+        )
+        current_offset = 0
+
+        while True:
+            incomplete_beatmaps = session.query(DBBeatmap) \
+                .filter(DBBeatmap.count_normal == 0, DBBeatmap.count_slider == 0, DBBeatmap.count_spinner == 0) \
+                .order_by(DBBeatmap.status.desc(), DBBeatmap.id.asc()) \
+                .offset(current_offset * 1000) \
+                .limit(1000) \
+                .all()
+                
+            if not incomplete_beatmaps:
+                break
+            
+            for beatmap in incomplete_beatmaps:
+                beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+
+                if not beatmap_file:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
+                    )
+                    continue
+
+                try:
+                    decoded_data = beatmap_file.decode("utf-8-sig")
+                    parsed_beatmap = Beatmap.parse(decoded_data)
+                except Exception as e:
+                    app.session.logger.warning(
+                        f'[beatmaps] -> Failed to parse beatmap {beatmap.id}',
+                        exc_info=e
+                    )
+                    continue
+
+                circles = parsed_beatmap.hit_objects(sliders=False, spinners=False)
+                sliders = parsed_beatmap.hit_objects(circles=False, spinners=False)
+                spinners = parsed_beatmap.hit_objects(circles=False, sliders=False)
+
+                session.query(DBBeatmap) \
+                    .filter(DBBeatmap.id == beatmap.id) \
+                    .update({
+                        'count_normal': len(circles),
+                        'count_slider': len(sliders),
+                        'count_spinner': len(spinners)
+                    })
+                session.commit()
+
+                app.session.logger.info(
+                    f'[beatmaps] -> Populated metadata for beatmap {beatmap.id}'
+                )
+
+            current_offset += 1

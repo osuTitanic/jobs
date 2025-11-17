@@ -8,6 +8,4 @@ sendgrid==6.12.5
 boto3-type-annotations-with-docs==0.3.1
 boto3<2
 psycopg2-binary==2.9.11
-
-# Use custom fork of slider to resolve some issues
 git+https://github.com/osuTitanic/slider.git@master
