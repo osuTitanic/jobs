@@ -1,36 +1,46 @@
-FROM python:3.14-slim AS builder
+FROM python:3.14-alpine AS builder
 
-# Installing/Updating system dependencies
-RUN apt update -y \
-    && apt install -y --no-install-recommends postgresql-client git curl build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=on \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Install rust toolchain
-RUN curl -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
+RUN apk add --no-cache \
+    build-base \
+    cargo \
+    libffi-dev \
+    openssl-dev \
+    pkgconf \
+    postgresql-dev \
+    rust \
+    zlib-dev \
+    git
 
-WORKDIR /jobs
-
-# Install python dependencies
+WORKDIR /tmp/build
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --no-compile --root /install -r requirements.txt
 
-FROM python:3.14-slim
+FROM python:3.14-alpine
 
-# Copy installed Python packages from builder
-COPY --from=builder /usr/local /usr/local
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=on
 
-# Generate __pycache__ directories
-ENV PYTHONDONTWRITEBYTECODE=1
-RUN python -m compileall -q app
+RUN apk add --no-cache \
+    ca-certificates \
+    libffi \
+    libstdc++ \
+    openssl \
+    postgresql-libs \
+    zlib
 
-# Disable output buffering
-ENV PYTHONUNBUFFERED=1
+COPY --from=builder /install/usr/local /usr/local
 
-# Copy source code
 WORKDIR /jobs
 COPY . .
 
-STOPSIGNAL SIGINT
-ENTRYPOINT [ "python3", "main.py" ]
+RUN python -m compileall -q app
+
+STOPSIGNAL SIGTERM
+CMD ["python", "main.py"]
