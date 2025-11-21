@@ -36,7 +36,7 @@ TASKS: list[Callable] = [
     users.recreate_play_history_for_user,
     scores.recalculate_pp_status,
     scores.recalculate_score_status,
-    scores.recalculate_statuses_all,
+    scores.recalculate_score_statuses_all,
     scores.recalculate_rx_scores,
     scores.oldsu_score_migration,
     scores.rx_score_migration,

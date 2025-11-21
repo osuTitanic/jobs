@@ -1,17 +1,10 @@
 
 from app.common.helpers.score import calculate_rx_score
-from app.common.database import users, scores, beatmaps
 from app.common.database.objects import DBScore
-from app.common.helpers import performance
-from app.common.constants import GameMode
+from app.common.database import users, scores
 from collections import defaultdict
-from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from datetime import datetime
 
-import hashlib
-import base64
-import csv
 import app
 
 def recalculate_pp_status(user_id: int, mode: int) -> None:
@@ -164,7 +157,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
 
     app.session.logger.info(f'[users] -> Done.')
 
-def recalculate_statuses_all(exclude_pp=False) -> None:
+def recalculate_score_statuses_all(exclude_pp: bool = False) -> None:
     """Recalculate the pp and score statuses of all users"""
     app.session.logger.info('[users] -> Recalculating statuses of all users...')
 
@@ -210,176 +203,3 @@ def recalculate_rx_scores() -> None:
             )
 
     app.session.logger.info('[users] -> Done.')
-
-def rx_score_migration() -> None:
-    with app.session.database.managed_session() as session:
-        session.query(DBScore) \
-            .filter(DBScore.status_pp > 1) \
-            .filter(or_(
-                DBScore.mods.op('&')(128) != 0,
-                DBScore.mods.op('&')(8192) != 0
-            )) \
-            .update({'status_pp': 2}, synchronize_session=False)
-        session.commit()
-
-def oldsu_score_migration(csv_filename: str) -> None:
-    app.session.logger.info(f'[scores] -> Migrating oldsu scores from {csv_filename}...')
-    
-    with open(csv_filename, 'r', encoding='utf-8') as csvfile:
-        reader = csv.reader(csvfile)
-        user_ids = set()
-
-        # Skip header row
-        next(reader)
-        
-        with app.session.database.managed_session() as session:
-            for row in reader:
-                score_data = read_csv_score_row(row)
-
-                if not score_data:
-                    continue
-
-                score_data['replay_data'] = decode_replay_data(score_data['replay_data_b64'])
-                score_data['replay_checksum'] = (
-                    hashlib.md5(score_data['replay_data']).hexdigest()
-                    if score_data['replay_data'] else None
-                )
-
-                process_score(score_data, session)
-                user_ids.add(score_data['user_id'])
-
-    app.session.logger.info(f'[scores] -> Migrated scores.')
-    app.session.logger.info(f'[scores] -> Recalculating statuses for migrated scores...')
-
-    for user in user_ids:
-        recalculate_pp_status(user, 0)
-        recalculate_pp_status(user, 1)
-        recalculate_pp_status(user, 2)
-        recalculate_pp_status(user, 3)
-        recalculate_score_status(user, 0)
-        recalculate_score_status(user, 1)
-        recalculate_score_status(user, 2)
-        recalculate_score_status(user, 3)
-
-    app.session.logger.info('[scores] -> Oldsu score migration complete.')
-
-def process_score(score_data: dict, session: Session) -> None:
-    if not (beatmap := beatmaps.fetch_by_checksum(score_data['beatmap_hash'], session=session)):
-        app.session.logger.warning(f'[scores] -> Beatmap not found for score: {score_data["beatmap_hash"]}')
-        return
-
-    score_object = DBScore(
-        beatmap_id=beatmap.id,
-        user_id=score_data['user_id'],
-        client_version=score_data['version'],
-        checksum=score_data['submit_hash'],
-        mode=score_data['mode'],
-        pp=0.0,
-        ppv1=0.0,
-        acc=0.0,
-        total_score=score_data['total_score'],
-        max_combo=score_data['max_combo'],
-        mods=score_data['mods'],
-        perfect=score_data['perfect'],
-        n300=score_data['hit300'],
-        n100=score_data['hit100'],
-        n50=score_data['hit50'],
-        nMiss=score_data['hit_miss'],
-        nGeki=score_data['hit_geki'],
-        nKatu=score_data['hit_katu'],
-        grade=score_data['grade'],
-        status_pp=2 if score_data['passed'] else 0,
-        status_score=2 if score_data['passed'] else 0,
-        pinned=False,
-        hidden=not score_data['replay_data'],
-        submitted_at=score_data['submitted_at'],
-        failtime=0 if not score_data['passed'] else None,
-        replay_md5=score_data['replay_checksum']
-    )
-    score_object.acc = calculate_accuracy(score_object)
-    score_object.pp = performance.calculate_ppv2(score_object)
-    score_object.ppv1 = performance.calculate_ppv1(score_object, session)
-    score_object = scores.create(score_object, session=session)
-
-    if not score_data['replay_data']:
-        return
-
-    app.session.storage.upload_replay(
-        score_object.id,
-        score_data['replay_data']
-    )
-
-def read_csv_score_row(row: list) -> dict | None:
-    if len(row) != 22:
-        app.session.logger.warning(f'[users] -> Invalid row in CSV: {row}')
-        return None
-
-    return {
-        'id': int(row[0]) if row[0].isdigit() else None,
-        'beatmap_hash': row[1],
-        'user_id': int(row[2]),
-        'total_score': int(row[3]),
-        'max_combo': int(row[4]),
-        'mode': int(row[5]),
-        'hit300': int(row[6]),
-        'hit100': int(row[7]),
-        'hit50': int(row[8]),
-        'hit_miss': int(row[9]),
-        'hit_geki': int(row[10]),
-        'hit_katu': int(row[11]),
-        'mods': int(row[12]),
-        'grade': row[13],
-        'perfect': bool(int(row[14])),
-        'passed': bool(int(row[15])),
-        'ranked': bool(int(row[16])),
-        'submit_hash': row[17],
-        'submitted_at': datetime.strptime(row[18], '%m/%d/%Y %H:%M'),
-        'version': int(row[19]),
-        'username': row[20],
-        'replay_data_b64': row[21]
-    }
-
-def calculate_accuracy(score: DBScore) -> float:
-    if score.total_objects == 0:
-        return 0.0
-
-    if score.mode == GameMode.Osu:
-        return (
-            ((score.n300 * 300.0) + (score.n100 * 100.0) + (score.n50 * 50.0))
-            / (score.total_objects * 300.0)
-        )
-
-    elif score.mode == GameMode.Taiko:
-        return (
-            ((score.n100 * 0.5) + score.n300)
-            / score.total_objects
-        )
-
-    elif score.mode == GameMode.CatchTheBeat:
-        return (
-            (score.n300 + score.n100 + score.n50)
-            / score.total_objects
-        )
-
-    elif score.mode == GameMode.OsuMania:
-        return (
-            (
-              (score.n50 * 50.0) +
-              (score.n100 * 100.0) +
-              (score.nKatu * 200.0) +
-              ((score.n300 + score.nGeki) * 300.0)
-            )
-            / (score.total_objects * 300.0)
-        )
-
-    return 0.0
-
-def decode_replay_data(replay_data_b64: str) -> bytes | None:
-    if not replay_data_b64:
-        return None
-
-    try:
-        return base64.b64decode(replay_data_b64)
-    except Exception:
-        app.session.logger.warning(f'[scores] -> Failed to decode replay data.')
-        return None
