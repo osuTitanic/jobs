@@ -11,13 +11,14 @@ from app.common.database.repositories import (
     posts
 )
 
-from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from slider import Beatmap
 
+import multiprocessing
 import config
 import app
+import os
 
 def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
     if not beatmapset.topic_id:
@@ -359,8 +360,14 @@ def recalculate_eyup_star_ratings(workers: str = '5', force: str = 'false'):
             f'[beatmaps] -> Mapping {len(all_beatmaps)} beatmaps to {workers} workers...'
         )
 
-    with ProcessPoolExecutor(int(workers)) as executor:
-        executor.map(
+    # Adjust pool size
+    config.POSTGRES_POOLSIZE = 1
+    config.POSTGRES_POOLSIZE_OVERFLOW = -1
+    os.environ['POSTGRES_POOLSIZE'] = '1'
+    os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+
+    with multiprocessing.Pool(int(workers)) as pool:
+        pool.map(
             recalculate_eyup_chunk,
             chunks(all_beatmaps, len(all_beatmaps) // int(workers))
         )
