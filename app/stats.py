@@ -49,6 +49,7 @@ def update_usercount_history() -> None:
             )
 
 def recalculate_stats(user_id: int, mode: int) -> None:
+    """Recalculate the stats of a user in a specific mode"""
     with app.session.database.managed_session() as session:
         if not (player := users.fetch_by_id(user_id, session=session)):
             app.session.logger.warning(f'[stats] -> User "{user_id}" was not found.')
@@ -127,6 +128,7 @@ def recalculate_stats(user_id: int, mode: int) -> None:
         del best_scores, best_scores_by_score
 
 def recalculate_stats_all() -> None:
+    """Recalculate the stats of all users in all modes"""
     with app.session.database.managed_session() as session:
         users_entries = users.fetch_all(session=session)
 
@@ -137,6 +139,7 @@ def recalculate_stats_all() -> None:
             recalculate_stats(user.id, 3)
 
 def restore_stats(user_id: int, remove: bool = False) -> None:
+    """Restore the stats of a user, optionally removing existing stats first"""
     with app.session.database.managed_session() as session:
         if remove:
             # Force-remove all stats
