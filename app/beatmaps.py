@@ -6,13 +6,12 @@ from app.common.database.repositories import (
     nominations,
     beatmapsets,
     beatmaps,
-    wrapper,
     scores,
     topics,
     posts
 )
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from slider import Beatmap
@@ -338,3 +337,51 @@ def recalculate_beatmap_difficulty():
                 session.commit()
 
             current_offset += 1
+
+def recalculate_eyup_star_ratings(workers: str = '5'):
+    with app.session.database.managed_session() as session:
+        app.session.logger.info(
+            '[beatmaps] -> Recalculating eyup star ratings'
+        )
+
+        all_beatmaps = session.query(DBBeatmap) \
+            .order_by(DBBeatmap.playcount) \
+            .all()
+
+        for beatmap in all_beatmaps:
+            session.expunge(beatmap)
+
+        app.session.logger.info(
+            f'[beatmaps] -> Mapping {len(all_beatmaps)} beatmaps to {workers} workers...'
+        )
+
+    with ProcessPoolExecutor(int(workers)) as executor:
+        executor.map(
+            recalculate_eyup_chunk,
+            chunks(all_beatmaps, len(all_beatmaps) // int(workers))
+        )
+
+def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
+    with app.session.database.managed_session() as session:
+        for beatmap in beatmaps:
+            rating = performance.calculate_eyup_star_rating(beatmap)
+
+            if rating is None:
+                app.session.logger.warning(
+                    f'[beatmaps] -> Failed to calculate eyup star rating for beatmap {beatmap.id}'
+                )
+                continue
+
+            session.query(DBBeatmap) \
+                .filter(DBBeatmap.id == beatmap.id) \
+                .update({'diff_eyup': round(rating, 4)})
+
+            app.session.logger.info(
+                f'[beatmaps] -> Updated eyup star rating for beatmap "{beatmap.id}"'
+            )
+
+        session.commit()
+
+def chunks(list: list, amount: int):
+    for i in range(0, len(list), amount):
+        yield list[i:i + amount]
