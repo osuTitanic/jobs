@@ -64,7 +64,11 @@ class Task:
     
     @property
     def evaluated_args(self) -> List[Any]:
-        return [evaluate_arugment(arg) for arg in self.args]
+        return [
+            evaluate_arugment(arg)
+            if isinstance(arg, str) else arg
+            for arg in self.args
+        ]
 
     def run(self) -> None:
         try:
