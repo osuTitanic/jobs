@@ -4,8 +4,8 @@ from app.common.database import users, histories
 from app.common.cache import leaderboards
 
 from dateutil.relativedelta import relativedelta
-from datetime import datetime, timedelta
 from collections import defaultdict
+from datetime import datetime
 
 import hashlib
 import app
@@ -46,10 +46,10 @@ def fix_historical_data() -> None:
             fix_replay_history_for_user(user.id, mode)
             fix_play_history_for_user(user.id, mode)
 
-def fix_historical_data_for_user(user_id: str) -> None:
+def fix_historical_data_for_user(user_id: int) -> None:
     for mode in range(4):
-        fix_replay_history_for_user(int(user_id), mode)
-        fix_play_history_for_user(int(user_id), mode)
+        fix_replay_history_for_user(user_id, mode)
+        fix_play_history_for_user(user_id, mode)
 
 def fix_replay_history_for_user(user_id: int, mode: int) -> None:
     """Ensure that there are no missing entries in the user's replay history"""
