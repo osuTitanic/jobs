@@ -91,6 +91,8 @@ def schedule_task(task: Task) -> Thread:
     return thread
 
 def run_task_loop(tasks: List[Task]) -> None:
+    session.logger.info('Waiting for database...')
+    session.database.wait_for_connection()
     session.logger.info(f'Scheduling {len(tasks)} tasks:')
 
     for task in tasks:
