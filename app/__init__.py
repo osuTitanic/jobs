@@ -42,7 +42,7 @@ TASKS: list[Callable] = [
     scores.rx_score_migration,
     ranks.update_ranks,
     ranks.index_ranks,
-    ppv2.recalculate_all_scores,
+    ppv2.recalculate_ppv2_all_scores,
     ppv2.recalculate_failed_ppv2_calculations,
     ppv2.recalculate_ppv2_multiprocessing,
     ppv2.recalculate_ppv2,

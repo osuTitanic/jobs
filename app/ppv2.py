@@ -12,22 +12,6 @@ import math
 import app
 import os
 
-def calculate_weighted_pp(scores: List[DBScore]) -> float:
-    if not scores:
-        return 0
-
-    weighted_pp = sum(score.pp * 0.95**index for index, score in enumerate(scores))
-    bonus_pp = 416.6667 * (1 - 0.9994 ** len(scores))
-    return weighted_pp + bonus_pp
-
-def calculate_weighted_acc(scores: List[DBScore]) -> float:
-    if not scores:
-        return 0
-
-    weighted_acc = sum(score.acc * 0.95**index for index, score in enumerate(scores))
-    bonus_acc = 100.0 / (20 * (1 - 0.95 ** len(scores)))
-    return (weighted_acc * bonus_acc) / 100
-
 def recalculate_ppv2_for_user(user: DBUser, session: Session):
     user.stats.sort(key=lambda x: x.mode)
 
@@ -56,7 +40,7 @@ def recalculate_ppv2_for_user(user: DBUser, session: Session):
 
         if best_scores:
             # Update pp & acc
-            user_stats.pp = calculate_weighted_pp(best_scores)
+            user_stats.pp = calculate_weighted_ppv2(best_scores)
             user_stats.acc = calculate_weighted_acc(best_scores)
 
             leaderboards.update(
@@ -153,11 +137,7 @@ def recalculate_ppv2_for_chunk(users: List[DBUser]) -> None:
 
         app.session.logger.info(f'[ppv2] -> Done.')
 
-def chunks(list: list, amount: int):
-    for i in range(0, len(list), amount):
-        yield list[i:i + amount]
-
-def recalculate_all_scores() -> None:
+def recalculate_ppv2_all_scores() -> None:
     current_index = 0
     scores_per_index = 500
 
@@ -188,3 +168,23 @@ def recalculate_all_scores() -> None:
             current_index += 1
 
     app.session.logger.info(f'[ppv2] -> Done.')
+
+def calculate_weighted_ppv2(scores: List[DBScore]) -> float:
+    if not scores:
+        return 0
+
+    weighted_pp = sum(score.pp * 0.95**index for index, score in enumerate(scores))
+    bonus_pp = 416.6667 * (1 - 0.9994 ** len(scores))
+    return weighted_pp + bonus_pp
+
+def calculate_weighted_acc(scores: List[DBScore]) -> float:
+    if not scores:
+        return 0
+
+    weighted_acc = sum(score.acc * 0.95**index for index, score in enumerate(scores))
+    bonus_acc = 100.0 / (20 * (1 - 0.95 ** len(scores)))
+    return (weighted_acc * bonus_acc) / 100
+
+def chunks(list: list, amount: int):
+    for i in range(0, len(list), amount):
+        yield list[i:i + amount]

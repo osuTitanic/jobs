@@ -7,6 +7,7 @@ from typing import Tuple
 import app
 
 def unread_chat_message_notifications() -> None:
+    """Generate unread chat message notifications for all users"""
     with app.session.database.managed_session() as session:
         for user in users.fetch_all(session=session):
             message, link = generate_unread_chat_notification(

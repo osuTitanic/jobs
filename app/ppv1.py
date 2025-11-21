@@ -20,7 +20,7 @@ def update_ppv1() -> None:
         app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
 
         user_list = users.fetch_all(session=session)
-        user_list.sort(key=resolve_ppv1, reverse=True)
+        user_list.sort(key=resolve_user_ppv1, reverse=True)
 
         for user in user_list:
             update_ppv1_for_user(user, session)
@@ -28,6 +28,7 @@ def update_ppv1() -> None:
         app.session.logger.info('[ppv1] -> Done.')
 
 def update_ppv1_for_user(user: DBUser, session: Session) -> None:
+    """Update ppv1 calculation for a single user"""
     for user_stats in user.stats:
         if user_stats.playcount <= 0:
             continue
@@ -73,6 +74,7 @@ def update_ppv1_for_user(user: DBUser, session: Session) -> None:
     app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
 def update_ppv1_multiprocessing(workers: int = 10) -> None:
+    """Update ppv1 calculations for all users using multiprocessing"""
     if config.FROZEN_PPV1_UPDATES:
         app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
         return
@@ -82,7 +84,7 @@ def update_ppv1_multiprocessing(workers: int = 10) -> None:
             app.session.logger.info(f'[ppv1] -> Updating ppv1 calculations ({workers} workers)...')
 
             user_list = users.fetch_all(session=session)
-            user_list.sort(key=resolve_ppv1, reverse=True)
+            user_list.sort(key=resolve_user_ppv1, reverse=True)
 
             # Adjust pool size
             config.POSTGRES_POOLSIZE = 1
@@ -95,14 +97,35 @@ def update_ppv1_multiprocessing(workers: int = 10) -> None:
                 ((user,) for user in user_list)
             )
 
-def update_ppv1_for_user_no_session(user: DBUser) -> None:
-    # Reset the database connection pool
-    app.session.database.engine.dispose()
+def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None:
+    """Recalculate ppv1 for all scores above a certain status"""
+    if config.FROZEN_PPV1_UPDATES:
+        app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
+        return
 
     with app.session.database.managed_session() as session:
-        update_ppv1_for_user(user, session)
+        all_scores = session.query(DBScore) \
+            .filter(DBScore.status_pp >= min_status) \
+            .order_by(DBScore.ppv1.desc()) \
+            .all()
 
-def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
+        app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
+
+        # Adjust pool size
+        config.POSTGRES_POOLSIZE = 1
+        config.POSTGRES_POOLSIZE_OVERFLOW = -1
+        os.environ['POSTGRES_POOLSIZE'] = '1'
+        os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+
+        with multiprocessing.Pool(int(workers)) as pool:
+            pool.map(
+                recalculate_ppv1_slice,
+                chunks(all_scores, len(all_scores) // int(workers))
+            )
+
+        app.session.logger.info('[ppv1] -> Done.')
+
+def recalculate_ppv1_slice(all_scores: List[DBScore]) -> None:
     app.session.database.engine.dispose()
 
     with app.session.database.managed_session() as session:
@@ -122,34 +145,14 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
 
         session.commit()
 
-def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None:
-    if config.FROZEN_PPV1_UPDATES:
-        app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
-        return
+def update_ppv1_for_user_no_session(user: DBUser) -> None:
+    # Reset the database connection pool
+    app.session.database.engine.dispose()
 
     with app.session.database.managed_session() as session:
-        all_scores = session.query(DBScore) \
-            .filter(DBScore.status_pp > min_status) \
-            .order_by(DBScore.ppv1.desc()) \
-            .all()
+        update_ppv1_for_user(user, session)
 
-        app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
-
-        # Adjust pool size
-        config.POSTGRES_POOLSIZE = 1
-        config.POSTGRES_POOLSIZE_OVERFLOW = -1
-        os.environ['POSTGRES_POOLSIZE'] = '1'
-        os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
-
-        with multiprocessing.Pool(int(workers)) as pool:
-            pool.map(
-                recalculate_slice,
-                chunks(all_scores, len(all_scores) // int(workers))
-            )
-
-        app.session.logger.info('[ppv1] -> Done.')
-
-def resolve_ppv1(user: DBUser) -> float:
+def resolve_user_ppv1(user: DBUser) -> float:
     if not user.stats:
         return 0
 
