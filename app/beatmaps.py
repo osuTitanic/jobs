@@ -367,7 +367,7 @@ def recalculate_eyup_star_ratings(workers: str = '5', force: str = 'false'):
 
 def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
     with app.session.database.managed_session() as session:
-        for beatmap in beatmaps:
+        for index, beatmap in enumerate(beatmaps):
             rating = performance.calculate_eyup_star_rating(beatmap)
 
             if rating is None:
@@ -383,6 +383,9 @@ def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
             app.session.logger.info(
                 f'[beatmaps] -> Updated eyup star rating for beatmap "{beatmap.id}"'
             )
+
+            if index % 1000 == 0:
+                session.commit()
 
         session.commit()
 
