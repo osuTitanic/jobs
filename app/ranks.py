@@ -56,9 +56,9 @@ def update_ranks() -> None:
 
         app.session.logger.info('[ranks] -> Done.')
 
-def index_ranks() -> None:
+def index_ranks(force: bool = False) -> None:
     """Check if the redis leaderboards are empty and rebuild them if necessary"""
-    if leaderboards.top_players(0):
+    if leaderboards.top_players(0) and not force:
         app.session.logger.info(f'[ranks] -> Leaderboard is not empty, please clear it first.')
         return
 

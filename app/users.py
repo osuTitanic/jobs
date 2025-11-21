@@ -152,7 +152,7 @@ def recreate_play_history_for_user(user_id: int, mode: int) -> None:
             return
 
         app.session.logger.info(f'[users] -> Recreating play history for user "{user.name}" ({mode})...')
-        entries = defaultdict(int)
+        entries: dict[tuple[int, int], int] = defaultdict(int)
 
         score_timestamps = session.query(DBScore.submitted_at) \
             .filter(DBScore.hidden == False) \

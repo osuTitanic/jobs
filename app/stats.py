@@ -136,7 +136,7 @@ def recalculate_stats_all() -> None:
             recalculate_stats(user.id, 2)
             recalculate_stats(user.id, 3)
 
-def restore_stats(user_id: int, remove=False) -> None:
+def restore_stats(user_id: int, remove: bool = False) -> None:
     with app.session.database.managed_session() as session:
         if remove:
             # Force-remove all stats

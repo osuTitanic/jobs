@@ -117,7 +117,7 @@ def recalculate_ppv2():
                 session
             )
 
-def recalculate_ppv2_multiprocessing(workers: str = '10') -> None:
+def recalculate_ppv2_multiprocessing(workers: int = 10) -> None:
     with app.session.database.managed_session() as session:
         app.session.logger.info(f'[ppv2] -> Updating ppv2 calculations ({workers} workers)...')
 
@@ -125,11 +125,11 @@ def recalculate_ppv2_multiprocessing(workers: str = '10') -> None:
         user_list.sort(key=lambda user: (user.stats[0].pp if user.stats else math.inf), reverse=True)
 
         # Split the list into chunks
-        chunk_size = math.ceil(len(user_list) / int(workers))
+        chunk_size = math.ceil(len(user_list) / workers)
         user_chunks = list(chunks(user_list, chunk_size))
 
         # Create a pool of workers
-        with multiprocessing.Pool(int(workers)) as pool:
+        with multiprocessing.Pool(workers) as pool:
             pool.starmap(
                 recalculate_ppv2_for_chunk,
                 ((user_chunk,) for user_chunk in user_chunks)

@@ -19,7 +19,7 @@ from . import ppv1
 
 import time
 
-TASKS = [
+TASKS: list[Callable] = [
     notifications.unread_chat_message_notifications,
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
@@ -61,12 +61,16 @@ class Task:
     @property
     def name(self) -> str:
         return self.function.__name__
+    
+    @property
+    def evaluated_args(self) -> List[Any]:
+        return [evaluate_arugment(arg) for arg in self.args]
 
     def run(self) -> None:
         try:
             session.logger.info(f'[{self.name}] Running task...')
             self.last_call = time.time()
-            self.function(*self.args)
+            self.function(*self.evaluated_args)
         except Exception as e:
             common.officer.call(f'Failed to run task: "{e}"', exc_info=e)
         finally:
@@ -94,3 +98,20 @@ def run_task_loop(tasks: List[Task]) -> None:
 
     # Keep the main thread alive to allow tasks to run
     Event().wait()
+
+def evaluate_arugment(arg: str) -> Any:
+    if arg.isdigit():
+        return int(arg)
+
+    try:
+        return float(arg)
+    except ValueError:
+        pass
+
+    if arg.lower() == 'true':
+        return True
+
+    if arg.lower() == 'false':
+        return False
+
+    return arg
