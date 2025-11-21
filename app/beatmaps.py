@@ -15,10 +15,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from slider import Beatmap
 
-import multiprocessing
 import config
 import app
-import os
 
 def move_beatmap_topic(beatmapset: DBBeatmapset, status: int, session: Session):
     if not beatmapset.topic_id:
@@ -339,7 +337,7 @@ def recalculate_beatmap_difficulty():
 
             current_offset += 1
 
-def recalculate_eyup_star_ratings(workers: str = '5', force: str = 'false'):
+def recalculate_eyup_star_ratings(force: str = 'false'):
     with app.session.database.managed_session() as session:
         app.session.logger.info(
             '[beatmaps] -> Recalculating eyup star ratings'
@@ -353,28 +351,7 @@ def recalculate_eyup_star_ratings(workers: str = '5', force: str = 'false'):
 
         all_beatmaps = all_beatmaps_query.all()
 
-        for beatmap in all_beatmaps:
-            session.expunge(beatmap)
-
-        app.session.logger.info(
-            f'[beatmaps] -> Mapping {len(all_beatmaps)} beatmaps to {workers} workers...'
-        )
-
-    # Adjust pool size
-    config.POSTGRES_POOLSIZE = 1
-    config.POSTGRES_POOLSIZE_OVERFLOW = -1
-    os.environ['POSTGRES_POOLSIZE'] = '1'
-    os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
-
-    with multiprocessing.Pool(int(workers)) as pool:
-        pool.map(
-            recalculate_eyup_chunk,
-            chunks(all_beatmaps, len(all_beatmaps) // int(workers))
-        )
-
-def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
-    with app.session.database.managed_session() as session:
-        for index, beatmap in enumerate(beatmaps):
+        for index, beatmap in enumerate(all_beatmaps):
             rating = performance.calculate_eyup_star_rating(beatmap)
 
             if rating is None:
@@ -392,10 +369,8 @@ def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
             )
 
             if index % 1000 == 0:
+                # Doing a lot of updates at once doesn't seem to work
+                # so we're committing every 1000 updates
                 session.commit()
 
         session.commit()
-
-def chunks(list: list, amount: int):
-    for i in range(0, len(list), amount):
-        yield list[i:i + amount]
