@@ -91,15 +91,21 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
     app.session.database.engine.dispose()
 
     with app.session.database.managed_session() as session:
-        for score in all_scores:
-            scores.update(
-                score.id,
-                {'ppv1': performance.calculate_ppv1(score, session)},
-                session=session
-            )
+        for index, score in enumerate(all_scores):
+            ppv1 = performance.calculate_ppv1(score, session)
+
+            session.query(DBScore) \
+                .filter(DBScore.id == score.id) \
+                .update({'ppv1': ppv1}, synchronize_session=False)
+
             app.session.logger.info(
-                f'[ppv1] -> Updated ppv1 for: {score.id} ({score.ppv1})'
+                f'[ppv1] -> Updated ppv1 for: {score.id} ({ppv1})'
             )
+
+            if index % 1000 == 0:
+                session.commit()
+
+        session.commit()
 
 def recalculate_ppv1_all_scores(min_status: str = '-1', workers: int = '10') -> None:
     with app.session.database.managed_session() as session:
