@@ -338,15 +338,19 @@ def recalculate_beatmap_difficulty():
 
             current_offset += 1
 
-def recalculate_eyup_star_ratings(workers: str = '5'):
+def recalculate_eyup_star_ratings(workers: str = '5', force: str = 'false'):
     with app.session.database.managed_session() as session:
         app.session.logger.info(
             '[beatmaps] -> Recalculating eyup star ratings'
         )
 
-        all_beatmaps = session.query(DBBeatmap) \
-            .order_by(DBBeatmap.playcount) \
-            .all()
+        all_beatmaps_query = session.query(DBBeatmap) \
+            .order_by(DBBeatmap.playcount.desc())
+
+        if force.lower() != 'true':
+            all_beatmaps_query = all_beatmaps_query.filter(DBBeatmap.diff_eyup == 0)
+
+        all_beatmaps = all_beatmaps_query.all()
 
         for beatmap in all_beatmaps:
             session.expunge(beatmap)
