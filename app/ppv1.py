@@ -12,6 +12,10 @@ import os
 
 def update_ppv1() -> None:
     """Update ppv1 calculations for all users"""
+    if config.FROZEN_PPV1_UPDATES:
+        app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
+        return
+
     with app.session.database.managed_session() as session:
         app.session.logger.info('[ppv1] -> Updating ppv1 calculations...')
 
@@ -69,6 +73,10 @@ def update_ppv1_for_user(user: DBUser, session: Session) -> None:
     app.session.logger.info(f'[ppv1] -> Updated {user.name} ({user.id}).')
 
 def update_ppv1_multiprocessing(workers: str = '10') -> None:
+    if config.FROZEN_PPV1_UPDATES:
+        app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
+        return
+
     with multiprocessing.Pool(int(workers)) as pool:
         with app.session.database.managed_session() as session:
             app.session.logger.info(f'[ppv1] -> Updating ppv1 calculations ({workers} workers)...')
@@ -115,6 +123,10 @@ def recalculate_slice(all_scores: List[scores.DBScore]) -> None:
         session.commit()
 
 def recalculate_ppv1_all_scores(min_status: str = '-1', workers: int = '10') -> None:
+    if config.FROZEN_PPV1_UPDATES:
+        app.session.logger.info('[ppv1] -> ppv1 updates are disabled, skipping...')
+        return
+
     with app.session.database.managed_session() as session:
         all_scores = session.query(DBScore) \
             .filter(DBScore.status_pp > int(min_status)) \
