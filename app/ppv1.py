@@ -75,6 +75,12 @@ def update_ppv1_multiprocessing(workers: str = '10') -> None:
             user_list = users.fetch_all(session=session)
             user_list.sort(key=resolve_ppv1, reverse=True)
 
+            # Adjust pool size
+            config.POSTGRES_POOLSIZE = 1
+            config.POSTGRES_POOLSIZE_OVERFLOW = -1
+            os.environ['POSTGRES_POOLSIZE'] = '1'
+            os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+
             pool.starmap(
                 update_ppv1_for_user_no_session,
                 ((user,) for user in user_list)
