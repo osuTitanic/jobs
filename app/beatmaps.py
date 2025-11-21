@@ -344,7 +344,8 @@ def recalculate_eyup_star_ratings(force: str = 'false'):
         )
 
         all_beatmaps_query = session.query(DBBeatmap) \
-            .order_by(DBBeatmap.playcount.desc())
+            .order_by(DBBeatmap.playcount.desc()) \
+            .filter(DBBeatmap.diff_eyup <= 0)
 
         if force.lower() != 'true':
             all_beatmaps_query = all_beatmaps_query.filter(DBBeatmap.diff_eyup == 0)
