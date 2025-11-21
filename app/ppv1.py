@@ -32,6 +32,7 @@ def update_ppv1_for_user(user: DBUser, session: Session) -> None:
             user.id,
             user_stats.mode,
             exclude_approved=(not config.APPROVED_MAP_REWARDS),
+            preload_beatmap=True,
             session=session
         )
 
