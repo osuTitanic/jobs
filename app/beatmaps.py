@@ -378,7 +378,7 @@ def recalculate_eyup_chunk(beatmaps: list[DBBeatmap]) -> None:
 
             session.query(DBBeatmap) \
                 .filter(DBBeatmap.id == beatmap.id) \
-                .update({'diff_eyup': float(round(rating, 4))})
+                .update({'diff_eyup': float(round(rating, 4))}, synchronize_session=False)
 
             app.session.logger.info(
                 f'[beatmaps] -> Updated eyup star rating for beatmap "{beatmap.id}"'
