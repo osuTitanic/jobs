@@ -168,9 +168,6 @@ def handle_qualified_set(beatmapset: DBBeatmapset, session: Session):
         f'[beatmaps] -> "{beatmapset.full_name}" was {status.name.lower()}.'
     )
 
-    # osz2 file will now be unused, so we can remove it
-    app.session.storage.remove_osz2(beatmapset.id)
-
 def handle_pending_set(beatmapset: DBBeatmapset, session: Session):
     last_update = datetime.now() - beatmapset.last_update
     graveyard_time = timedelta(weeks=2)
