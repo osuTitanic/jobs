@@ -1,8 +1,8 @@
 
-from app.common.cache import leaderboards, usercount as redis_usercount
 from app.common.database.objects import DBBeatmap, DBReplayHistory, DBScore, DBStats
 from app.common.database import beatmaps, scores, stats, users, histories, beatmapsets
 from app.common.database import usercount as db_usercount
+from app.common.cache import leaderboards, activity
 from app.common.helpers import performance
 
 from datetime import timedelta
@@ -35,12 +35,15 @@ def update_website_stats() -> None:
 def update_usercount_history() -> None:
     """Update the usercount history, displayed on the website"""
     with app.session.database.managed_session() as session:
-        db_usercount.create(
-            count := redis_usercount.get(),
+        activity_state = activity.get_all()
+        entry = db_usercount.create(
+            osu_count=activity_state['osu'],
+            irc_count=activity_state['irc'],
+            mp_count=activity_state['mp'],
             session=session
         )
         app.session.logger.info(
-            f'[usercount] -> Created usercount entry ({count} players).'
+            f'[usercount] -> Created usercount entry ({entry.total_users} players).'
         )
 
         if rows := db_usercount.delete_old(timedelta(weeks=1), session=session):
