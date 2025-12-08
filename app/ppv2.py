@@ -121,10 +121,10 @@ def recalculate_ppv2_multiprocessing(workers: int = 10) -> None:
 
 def recalculate_ppv2_for_chunk(users: List[DBUser]) -> None:
     # Adjust pool size
-    config.POSTGRES_POOLSIZE = 1
-    config.POSTGRES_POOLSIZE_OVERFLOW = -1
-    os.environ['POSTGRES_POOLSIZE'] = '1'
-    os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+    config.POSTGRES_POOL_SIZE = 1
+    config.POSTGRES_POOL_SIZE_OVERFLOW = -1
+    os.environ['POSTGRES_POOL_SIZE'] = '1'
+    os.environ['POSTGRES_POOL_SIZE_OVERFLOW'] = '-1'
 
     with app.session.database.managed_session() as session:
         app.session.logger.info(f'[ppv2] -> Updating ppv2 calculations ({len(users)} users)...')

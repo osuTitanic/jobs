@@ -87,10 +87,10 @@ def update_ppv1_multiprocessing(workers: int = 10) -> None:
             user_list.sort(key=resolve_user_ppv1, reverse=True)
 
             # Adjust pool size
-            config.POSTGRES_POOLSIZE = 1
-            config.POSTGRES_POOLSIZE_OVERFLOW = -1
-            os.environ['POSTGRES_POOLSIZE'] = '1'
-            os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+            config.POSTGRES_POOL_SIZE = 1
+            config.POSTGRES_POOL_SIZE_OVERFLOW = -1
+            os.environ['POSTGRES_POOL_SIZE'] = '1'
+            os.environ['POSTGRES_POOL_SIZE_OVERFLOW'] = '-1'
 
             pool.starmap(
                 update_ppv1_for_user_no_session,
@@ -112,10 +112,10 @@ def recalculate_ppv1_all_scores(min_status: int = -1, workers: int = 10) -> None
         app.session.logger.info(f'[ppv1] -> Recalculating ppv1 for {len(all_scores)} scores...')
 
         # Adjust pool size
-        config.POSTGRES_POOLSIZE = 1
-        config.POSTGRES_POOLSIZE_OVERFLOW = -1
-        os.environ['POSTGRES_POOLSIZE'] = '1'
-        os.environ['POSTGRES_POOLSIZE_OVERFLOW'] = '-1'
+        config.POSTGRES_POOL_SIZE = 1
+        config.POSTGRES_POOL_SIZE_OVERFLOW = -1
+        os.environ['POSTGRES_POOL_SIZE'] = '1'
+        os.environ['POSTGRES_POOL_SIZE_OVERFLOW'] = '-1'
 
         with multiprocessing.Pool(int(workers)) as pool:
             pool.map(
