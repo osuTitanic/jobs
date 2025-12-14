@@ -104,4 +104,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        exit(0)
+        app.session.logger.info("Shutting down...")
+    finally:
+        app.session.database.engine.dispose()
+        app.session.redis.close()
