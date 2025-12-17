@@ -1,6 +1,7 @@
 
 from app.common.constants import BeatmapStatus, ScoreStatus
 from app.common.database import DBBeatmapset, DBBeatmap
+from app.common.config import config_instance as config
 from app.common.helpers import performance
 from app.common.database.repositories import (
     nominations,
@@ -14,7 +15,6 @@ from app.common.database.repositories import (
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
-import config
 import app
 
 def update_beatmap_statuses():

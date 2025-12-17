@@ -1,5 +1,6 @@
 from app.common.database import users, stats, scores, histories
 from app.common.database.objects import DBUser, DBScore
+from app.common.config import config_instance as config
 from app.common.helpers import performance
 from app.common.cache import leaderboards
 from sqlalchemy.orm import Session
@@ -7,7 +8,6 @@ from typing import List
 
 import multiprocessing
 import app.session
-import config
 import os
 
 def update_ppv1() -> None:

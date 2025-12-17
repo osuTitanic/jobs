@@ -1,11 +1,11 @@
 
 from app.common.logging import Console
+from app.session import config
 from typing import List
 from app import Task
 
 import argparse
 import logging
-import config
 import json
 import app
 

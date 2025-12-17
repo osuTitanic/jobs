@@ -1,9 +1,9 @@
 
 from app.common.database import users, stats, histories
+from app.common.config import config_instance as config
 from app.common.cache import leaderboards
 
 import app.session
-import config
 
 def update_ranks() -> None:
     """Update the rank history for all users"""

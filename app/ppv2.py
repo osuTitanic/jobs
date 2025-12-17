@@ -1,5 +1,6 @@
 
 from app.common.database.repositories import users, scores, stats
+from app.common.config import config_instance as config
 from app.common.database import DBScore, DBUser
 from app.common.helpers import performance
 from app.common.cache import leaderboards
@@ -7,7 +8,6 @@ from sqlalchemy.orm import Session
 from typing import List
 
 import multiprocessing
-import config
 import math
 import app
 import os

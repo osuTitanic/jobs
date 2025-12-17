@@ -2,6 +2,7 @@
 from app.common.database.objects import DBBeatmap, DBReplayHistory, DBScore, DBStats
 from app.common.database import beatmaps, scores, stats, users, histories, beatmapsets
 from app.common.database import usercount as db_usercount
+from app.common.config import config_instance as config
 from app.common.cache import leaderboards, activity
 from app.common.helpers import performance
 
@@ -10,7 +11,6 @@ from sqlalchemy import func
 from typing import List
 
 import app.session
-import config
 
 def update_website_stats() -> None:
     """Update the stats required for the website & api stats"""
