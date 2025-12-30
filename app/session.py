@@ -17,7 +17,6 @@ redis = Redis(
     config.REDIS_HOST,
     config.REDIS_PORT
 )
-
 events = EventQueue(
     name='bancho:events',
     connection=redis
