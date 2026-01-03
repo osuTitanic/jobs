@@ -143,8 +143,6 @@ def recalculate_ppv1_slice(all_scores: List[DBScore]) -> None:
             if index % 1000 == 0:
                 session.commit()
 
-        session.commit()
-
 def update_ppv1_for_user_no_session(user: DBUser) -> None:
     # Reset the database connection pool
     app.session.database.engine.dispose()

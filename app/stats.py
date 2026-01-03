@@ -83,7 +83,7 @@ def recalculate_stats(user_id: int, mode: int) -> None:
                 "acc": calculate_weighted_acc(best_scores),
                 "rscore": sum(score.total_score for score in best_scores_by_score)
             })
-        session.commit()
+        session.flush()
 
         user_stats = stats.fetch_by_mode(
             user_id,
@@ -280,8 +280,6 @@ def restore_stats(user_id: int, remove: bool = False) -> None:
         for user_stats in all_stats:
             session.add(user_stats)
             leaderboards.update(user_stats, user.country)
-
-        session.commit()
 
 def calculate_weighted_pp(scores: List[DBScore]) -> float:
     if not scores:

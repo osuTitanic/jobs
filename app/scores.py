@@ -96,7 +96,7 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
             .filter(DBScore.status_pp > -1) \
             .filter(DBScore.hidden == False) \
             .update({'status_score': DBScore.status_pp})
-        session.commit()
+        session.flush()
 
         # Recalculate score statuses
         user_scores = session.query(DBScore) \

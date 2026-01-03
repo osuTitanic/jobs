@@ -92,7 +92,7 @@ def fix_replay_history_for_user(user_id: int, mode: int) -> None:
                     f"'{user.name}' ({last_entry_date.year}-{last_entry_date.month:02d})"
                 )
 
-            session.commit()
+            session.flush()
             last_entry = entry
 
 def fix_play_history_for_user(user_id: int, mode: int) -> None:
@@ -130,7 +130,7 @@ def fix_play_history_for_user(user_id: int, mode: int) -> None:
                     day=1
                 )
                 session.add(missing_entry)
-                session.commit()
+                session.flush()
 
                 app.session.logger.info(
                     f"[users] -> Added missing play history entry for "
@@ -177,7 +177,5 @@ def recreate_play_history_for_user(user_id: int, mode: int) -> None:
             entry.year = year
             entry.month = month
             session.add(entry)
-
-        session.commit()
 
     app.session.logger.info(f'[users] -> Done.')
