@@ -188,3 +188,7 @@ fabric.properties
 
 # csv data files
 *.csv
+
+# Ignore all "schedule.*.json" files
+schedule.*.json
+!schedule.prod.json
