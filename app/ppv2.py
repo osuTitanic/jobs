@@ -73,7 +73,11 @@ def recalculate_failed_ppv2_calculations():
             .all()
         
         for score in failed_scores:
-            pp = performance.calculate_ppv2(score)
+            try:
+                pp = performance.calculate_ppv2(score)
+            except Exception as e:
+                app.session.logger.warning(f'[ppv2] -> Exception while recalculating pp for: {score.id} ({e})')
+                continue
 
             if not pp:
                 app.session.logger.warning(f'[ppv2] -> Failed to update pp for: {score.id}')
