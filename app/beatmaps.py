@@ -15,7 +15,10 @@ from app.common.database.repositories import (
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 
+import zipfile
+import stat
 import app
+import io
 
 def update_beatmap_statuses():
     """Update beatmap statuses (graveyard & qualified)"""
@@ -334,3 +337,39 @@ def hide_scores(beatmapset: DBBeatmapset, session: Session) -> None:
             },
             session=session
         )
+
+def fix_osz_permissions() -> None:
+    for file in app.session.storage.list("osz"):
+        osz_file = app.session.storage.get_osz_internal(file)
+        needs_rewrite = False
+
+        with zipfile.ZipFile(io.BytesIO(osz_file), 'r') as zip_ref:
+            for info in zip_ref.infolist():
+                unix_perms = (info.external_attr >> 16) & 0o777
+
+                if unix_perms == 0:
+                    needs_rewrite = False
+                    break
+
+                if unix_perms < 0o664:
+                    needs_rewrite = True
+
+        if not needs_rewrite:
+            continue
+
+        app.session.logger.info(
+            f'[beatmaps] -> Fixing osz permissions for https://osu.titanic.sh/s/{file}'
+        )
+
+        with zipfile.ZipFile(io.BytesIO(osz_file), 'r') as zip_ref:
+            output = io.BytesIO()
+
+            with zipfile.ZipFile(output, 'w') as new_zip:
+                for info in zip_ref.infolist():
+                    info.external_attr = (stat.S_IFREG | 0o664) << 16
+                    new_zip.writestr(info, zip_ref.read(info.filename))
+
+            app.session.storage.upload_osz(
+                file,
+                output.getvalue()
+            )
