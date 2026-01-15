@@ -23,7 +23,6 @@ TASKS: list[Callable] = [
     notifications.unread_chat_message_notifications,
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
-    beatmaps.fix_osz_permissions,
     stats.update_usercount_history,
     stats.update_website_stats,
     stats.recalculate_stats_all,
