@@ -24,6 +24,7 @@ def update_ppv1() -> None:
 
         for user in user_list:
             update_ppv1_for_user(user, session)
+            session.commit()
 
         app.session.logger.info('[ppv1] -> Done.')
 
