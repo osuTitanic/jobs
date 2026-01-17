@@ -75,17 +75,18 @@ def generate_loadtesting_configuration(
                 "Password": user_password,
                 "SpectatorTargetId": spectator_target_id,
                 "MessageTargetChannel": "#osu",
-                "Messages": []
+                "Messages": set()
             }
 
             name_history = names.fetch_all(user.id, session)
-            target_names = [user.name]
-            target_names += [entry.name for entry in name_history]
+            target_names = set([user.name])
+            target_names.update(entry.name for entry in name_history)
 
             for name in target_names:
                 sender_messages = messages.fetch_all_by_sender(name, session)
-                user_entry["Messages"] += [msg.message for msg in sender_messages]
+                user_entry["Messages"].update([msg.message for msg in sender_messages])
 
+            user_entry["Messages"] = list(user_entry["Messages"])
             target_config["Users"].append(user_entry)
 
             app.session.logger.info(
