@@ -369,13 +369,14 @@ def fix_beatmap_total_lengths() -> None:
             session.query(DBBeatmap) \
                 .filter(DBBeatmap.id == beatmap.id) \
                 .update({
-                    'total_length': total_length,
-                    'drain_length': drain_length
+                    'total_length': round(total_length / 1000),
+                    'drain_length': round(drain_length / 1000)
                 })
             session.flush()
             
             app.session.logger.info(
-                f'[beatmaps] -> Updated lengths for beatmap {beatmap.id} (Total: {total_length}s, Drain: {drain_length}s)'
+                f'[beatmaps] -> Updated lengths for beatmap {beatmap.id} '
+                f'(Total: {round(total_length / 1000)}s, Drain: {round(drain_length / 1000)}s)'
             )
 
 # The minimum gap between the start of the break and the previous object.
