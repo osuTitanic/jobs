@@ -23,6 +23,7 @@ import time
 TASKS: list[Callable] = [
     notifications.unread_chat_message_notifications,
     loadtesting.generate_loadtesting_configuration,
+    beatmaps.fix_beatmap_total_lengths,
     beatmaps.recalculate_beatmap_difficulty,
     beatmaps.update_beatmap_statuses,
     stats.update_usercount_history,
