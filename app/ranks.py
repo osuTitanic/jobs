@@ -52,6 +52,7 @@ def update_ranks() -> None:
                         session=session
                     )
 
+            session.commit()
             app.session.logger.info(f'[ranks] -> Updated {user.name}.')
 
         app.session.logger.info('[ranks] -> Done.')
