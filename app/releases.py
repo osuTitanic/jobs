@@ -147,6 +147,7 @@ def notify_webhook(file: DBReleaseFiles, stream: str) -> None:
     if file.url_patch:
         embed.add_field("Download", f"[Patch]({file.url_patch})", inline=True)
 
+    webhook.embeds = []
     webhook.add_embed(embed)
 
     try:
