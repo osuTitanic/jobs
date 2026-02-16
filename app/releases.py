@@ -15,6 +15,7 @@ session.headers.update({
     "User-Agent": "osu!",
     "Accept": "application/json"
 })
+windows_os_parameter = "10.0.0.26100.1.0"
 
 def release_updates(*release_streams) -> None:
     with app.session.database.managed_session() as session:
@@ -36,10 +37,17 @@ def release_updates(*release_streams) -> None:
         app.session.logger.info('[releases] -> Done.')
 
 def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFiles]:
-    response = session.get(f"https://osu.ppy.sh/web/check-updates.php?action=check&stream={stream}")
+    response = session.get(
+        "https://osu.ppy.sh/web/check-updates.php",
+        params={
+            "action": "check",
+            "stream": stream,
+            "os": windows_os_parameter
+        }
+    )
 
     if not response.ok:
-        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {response.data} ({response.status_code})')
+        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {response.text} ({response.status_code})')
         return []
 
     data = response.json()
