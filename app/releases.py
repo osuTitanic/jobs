@@ -56,7 +56,7 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
             app.session.logger.debug(f'[releases] -> File with version "{file_version}" already exists. Skipping...')
             continue
 
-        yield releases.create_official_file(
+        release = releases.create_official_file(
             filename=file["filename"],
             file_version=file_version,
             file_hash=file["file_hash"],
@@ -67,8 +67,8 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
             timestamp=datetime.strptime(file["timestamp"], '%Y-%m-%d %H:%M:%S'),
             session=database_session
         )
-
-    database_session.commit()
+        database_session.commit()
+        yield release
 
 def post_update_actions(file: DBReleaseFiles, stream: str) -> None:
     notify_webhook(file, stream)
