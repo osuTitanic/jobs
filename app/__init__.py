@@ -11,6 +11,7 @@ from . import common
 from . import notifications
 from . import loadtesting
 from . import beatmaps
+from . import releases
 from . import scores
 from . import users
 from . import ranks
@@ -48,7 +49,8 @@ TASKS: list[Callable] = [
     ppv2.recalculate_ppv2,
     ppv1.update_ppv1,
     ppv1.update_ppv1_multiprocessing,
-    ppv1.recalculate_ppv1_all_scores
+    ppv1.recalculate_ppv1_all_scores,
+    releases.release_updates
 ]
 
 @dataclass
