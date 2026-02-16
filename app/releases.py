@@ -70,5 +70,30 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
     database_session.commit()
 
 def post_update_actions(file: DBReleaseFiles) -> None:
-    # TODO: Auto-upload to titanic cdn
-    ...
+    if not config.RELEASE_UPDATE_S3_TARGET:
+        return
+
+    if not app.session.storage.valid_s3_configuration:
+        return
+
+    upload_to_s3(file.url_full)
+    upload_to_s3(file.url_patch)
+
+def upload_to_s3(url: str) -> None:
+    if not url:
+        return
+
+    app.session.logger.info(f'[releases] -> Downloading file from "{url}"...')
+    response = session.get(url, stream=True)
+    response.raw.decode_content = True
+
+    if not response.ok:
+        app.session.logger.error(f'[releases] -> Failed to download file from "{url}": {response.text} ({response.status_code})')
+        return
+
+    checksum = url.rsplit('/', 1)[-1]
+    filename = url.rsplit('/', 2)[-2]
+    key = f'{filename}/{checksum}'
+
+    app.session.logger.info(f'[releases] -> Uploading file to S3 "{key}"...')
+    app.session.storage.save_to_s3(response.raw, key, config.RELEASE_UPDATE_S3_TARGET)
