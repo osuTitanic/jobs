@@ -30,6 +30,7 @@ def release_updates(*release_streams) -> None:
                     f'[releases] -> New release file created: '
                     f'{created_file.filename} / {created_file.file_version} ({created_file.file_hash})'
                 )
+                post_update_actions(created_file)
 
         app.session.logger.info('[releases] -> Done.')
 
@@ -67,3 +68,7 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
         )
 
     database_session.commit()
+
+def post_update_actions(file: DBReleaseFiles) -> None:
+    # TODO: Auto-upload to titanic cdn
+    ...
