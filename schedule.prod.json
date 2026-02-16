@@ -33,5 +33,10 @@
         "name": "unread_chat_message_notifications",
         "interval": 1200,
         "args": []
+    },
+    {
+        "name": "release_updates",
+        "interval": 600,
+        "args": ["stable40", "cuttingedge", "beta40"]
     }
 ]

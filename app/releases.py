@@ -9,19 +9,13 @@ from datetime import datetime
 import requests
 import app
 
-release_streams = {
-    "stable40",
-    "cuttingedge",
-    "beta40"
-}
-
 session = requests.Session()
 session.headers.update({
     "User-Agent": "osu!",
     "Accept": "application/json"
 })
 
-def release_updates() -> None:
+def release_updates(*release_streams) -> None:
     with app.session.database.managed_session() as session:
         if not config.RELEASE_UPDATES_ENABLED:
             app.session.logger.info("[releases] -> Release updates are disabled. Skipping...")
