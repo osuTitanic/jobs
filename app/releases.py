@@ -37,24 +37,9 @@ def release_updates(*release_streams) -> None:
         app.session.logger.info('[releases] -> Done.')
 
 def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFiles]:
-    response = session.get(
-        "https://osu.ppy.sh/web/check-updates.php",
-        params={
-            "action": "check",
-            "stream": stream,
-            "os": windows_os_parameter
-        }
-    )
-
-    if not response.ok:
-        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {response.text} ({response.status_code})')
-        return []
-
-    data = response.json()
-
-    if type(data) is not list:
-        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {data}')
-        return []
+    data_windows = fetch_stream(stream, windows_os_parameter)
+    data_linux = fetch_stream(stream)
+    data = data_windows + data_linux
 
     for file in data:
         file_version = int(file["file_version"])
@@ -77,6 +62,34 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
         )
         database_session.commit()
         yield release
+
+def fetch_stream(stream: str, os: str | None = None) -> list[dict]:
+    params = {
+        "action": "check",
+        "stream": stream
+    }
+
+    if os is not None:
+        # Different versions of osu!auth.dll exist for linux & windows
+        # The "os" query parameter determines which variant to retrieve
+        params["os"] = os
+
+    response = session.get(
+        "https://osu.ppy.sh/web/check-updates.php",
+        params=params
+    )
+
+    if not response.ok:
+        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {response.text} ({response.status_code})')
+        return []
+
+    data = response.json()
+
+    if type(data) is not list:
+        app.session.logger.error(f'[releases] -> Failed to check "{stream}" for updates: {data}')
+        return []
+
+    return data
 
 def post_update_actions(file: DBReleaseFiles, stream: str) -> None:
     notify_webhook(file, stream)
