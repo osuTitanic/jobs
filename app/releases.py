@@ -2,9 +2,10 @@
 from app.common.config import config_instance as config
 from app.common.database.objects import DBReleaseFiles
 from app.common.database.repositories import releases
+from app.common.webhooks import Webhook, Embed
 from sqlalchemy.orm import Session
-from typing import Iterator, List
 from datetime import datetime
+from typing import Iterator
 
 import requests
 import app
@@ -30,7 +31,7 @@ def release_updates(*release_streams) -> None:
                     f'[releases] -> New release file created: '
                     f'{created_file.filename} / {created_file.file_version} ({created_file.file_hash})'
                 )
-                post_update_actions(created_file)
+                post_update_actions(created_file, stream)
 
         app.session.logger.info('[releases] -> Done.')
 
@@ -69,18 +70,19 @@ def check_stream(stream: str, database_session: Session) -> Iterator[DBReleaseFi
 
     database_session.commit()
 
-def post_update_actions(file: DBReleaseFiles) -> None:
-    if not config.RELEASE_UPDATE_S3_TARGET:
-        return
-
-    if not app.session.storage.valid_s3_configuration:
-        return
-
+def post_update_actions(file: DBReleaseFiles, stream: str) -> None:
+    notify_webhook(file, stream)
     upload_to_s3(file.url_full)
     upload_to_s3(file.url_patch)
 
 def upload_to_s3(url: str) -> None:
     if not url:
+        return
+
+    if not config.RELEASE_UPDATE_S3_TARGET:
+        return
+
+    if not app.session.storage.valid_s3_configuration:
         return
 
     app.session.logger.info(f'[releases] -> Downloading file from "{url}"...')
@@ -97,3 +99,48 @@ def upload_to_s3(url: str) -> None:
 
     app.session.logger.info(f'[releases] -> Uploading file to S3 "{key}"...')
     app.session.storage.save_to_s3(response.raw, key, config.RELEASE_UPDATE_S3_TARGET)
+
+def notify_webhook(file: DBReleaseFiles, stream: str) -> None:
+    if not config.RELEASE_UPDATE_NOTIFY_WEBHOOK:
+        return
+
+    webhook = Webhook(
+        url=config.RELEASE_UPDATE_NOTIFY_WEBHOOK,
+        username="Release Updates",
+        avatar_url="https://osu.ppy.sh/images/layout/osu-logo.png",
+    )
+    embed = Embed(
+        title="New release file",
+        description=f"A new file has been added to the `{stream}` release stream.",
+        color=0xFF66AB
+    )
+
+    embed.add_field("Filename", f"`{file.filename}`", inline=True)
+    embed.add_field("Version", f"`{file.file_version}`", inline=True)
+    embed.add_field("File Hash", f"`{file.file_hash}`", inline=True)
+    embed.add_field("Filesize", format_filesize(file.filesize), inline=True)
+
+    if file.url_full:
+        embed.add_field("Download", f"[Full]({file.url_full})", inline=True)
+
+    if file.url_patch:
+        embed.add_field("Download", f"[Patch]({file.url_patch})", inline=True)
+
+    webhook.add_embed(embed)
+
+    try:
+        success = webhook.post()
+    except Exception as e:
+        app.session.logger.error(f'[releases] -> Failed to post webhook notification for "{file.filename}": {e}')
+        return
+
+    if not success:
+        app.session.logger.error(
+            f'[releases] -> Failed to post webhook notification for "{file.filename}"'
+        )
+
+def format_filesize(size: int) -> str:
+    for unit in ["B", "KB", "MB", "GB"]:
+        if size < 1024: return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
