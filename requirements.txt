@@ -6,5 +6,5 @@ rosu-pp-py==3.1.0
 sendgrid==6.12.5
 boto3<2
 psycopg2-binary==2.9.11
-pydantic-settings==2.13.0
+pydantic-settings==2.13.1
 git+https://github.com/osuTitanic/slider@master
