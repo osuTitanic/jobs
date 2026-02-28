@@ -7,6 +7,10 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
         affected_maps = database.query(DBBeatmap) \
             .filter(DBBeatmap.server == 0) \
             .filter(DBBeatmap.count_normal == 0, DBBeatmap.count_slider == 0, DBBeatmap.count_spinner == 0)
+        
+        session.logger.info(
+            f'Found {affected_maps.count()} beatmaps to backfill with missing objects'
+        )
             
         for beatmap in affected_maps:
             ossapi_map = session.ossapi.beatmap(beatmap.id)
@@ -25,6 +29,10 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
             .filter(DBBeatmap.server == 0) \
             .filter(DBBeatmap.drain_length.in_([0, 1]))
             
+        session.logger.info(
+            f'Found {affected_maps.count()} beatmaps to backfill with missing drain length'
+        )
+
         for beatmap in affected_maps:
             ossapi_map = session.ossapi.beatmap(beatmap.id)
             assert ossapi_map is not None, "this is fine"
