@@ -5,7 +5,7 @@ from app import session
 def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
     with session.database.managed_session() as database:
         affected_maps = database.query(DBBeatmap) \
-            .filter(DBBeatmap.server == 0) \
+            .filter(DBBeatmap.id < 1000000000) \
             .filter(DBBeatmap.count_normal == 0, DBBeatmap.count_slider == 0, DBBeatmap.count_spinner == 0)
         
         session.logger.info(
@@ -26,7 +26,7 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
             database.commit()
 
         affected_maps = database.query(DBBeatmap) \
-            .filter(DBBeatmap.server == 0) \
+            .filter(DBBeatmap.id < 1000000000) \
             .filter(DBBeatmap.drain_length.in_([0, 1]))
             
         session.logger.info(
