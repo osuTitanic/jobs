@@ -111,7 +111,7 @@ def recalculate_beatmap_difficulty():
 
                 session.query(DBBeatmap) \
                     .filter(DBBeatmap.id == beatmap.id) \
-                    .update({'diff': result.stars})
+                    .update({'diff': result.star_rating})
                 session.flush()
 
             current_offset += 1

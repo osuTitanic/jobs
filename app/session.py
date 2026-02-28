@@ -1,4 +1,5 @@
 
+from .common.helpers.performance import ppv2, ppv2_rosu
 from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
@@ -27,3 +28,7 @@ requests = Session()
 requests.headers = {
     'User-Agent': f'osuTitanic ({config.DOMAIN_NAME})'
 }
+
+# Initialize ppv2 calculator
+instance = ppv2_rosu.RosuPerformanceCalculator(storage)
+ppv2.initialize_calculator(instance)
