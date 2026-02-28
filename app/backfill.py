@@ -19,9 +19,9 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
             database.query(DBBeatmap) \
                 .filter(DBBeatmap.id == beatmap.id) \
                 .update({
-                    DBBeatmap.count_normal: ossapi_map.count_normal,
-                    DBBeatmap.count_slider: ossapi_map.count_slider,
-                    DBBeatmap.count_spinner: ossapi_map.count_spinner
+                    DBBeatmap.count_normal: ossapi_map.count_circles,
+                    DBBeatmap.count_slider: ossapi_map.count_sliders,
+                    DBBeatmap.count_spinner: ossapi_map.count_spinners
                 })
             database.commit()
 
