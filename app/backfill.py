@@ -13,8 +13,11 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
         )
             
         for beatmap in affected_maps:
-            ossapi_map = session.ossapi.beatmap(beatmap.id)
-            assert ossapi_map is not None, "this is fine"
+            try:
+                ossapi_map = session.ossapi.beatmap(beatmap.id)
+            except Exception as e:
+                session.logger.warning(f"Failed to backfill beatmap {beatmap.id}: {e}")
+                continue
             
             database.query(DBBeatmap) \
                 .filter(DBBeatmap.id == beatmap.id) \
@@ -34,8 +37,11 @@ def i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane():
         )
 
         for beatmap in affected_maps:
-            ossapi_map = session.ossapi.beatmap(beatmap.id)
-            assert ossapi_map is not None, "this is fine"
+            try:
+                ossapi_map = session.ossapi.beatmap(beatmap.id)
+            except Exception as e:
+                session.logger.warning(f"Failed to backfill beatmap {beatmap.id}: {e}")
+                continue
             
             database.query(DBBeatmap) \
                 .filter(DBBeatmap.id == beatmap.id) \
