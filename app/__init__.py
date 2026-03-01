@@ -12,7 +12,6 @@ from . import notifications
 from . import loadtesting
 from . import beatmaps
 from . import releases
-from . import backfill
 from . import scores
 from . import users
 from . import ranks
@@ -23,7 +22,6 @@ from . import ppv1
 import time
 
 TASKS: list[Callable] = [
-    backfill.i_need_to_backfill_a_shit_ton_of_data_and_it_makes_me_go_insane,
     notifications.unread_chat_message_notifications,
     loadtesting.generate_loadtesting_configuration,
     beatmaps.fix_beatmap_total_lengths,

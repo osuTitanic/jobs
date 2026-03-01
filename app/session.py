@@ -6,7 +6,6 @@ from .common.storage import Storage
 from .common.config import Config
 
 from requests import Session
-from ossapi import Ossapi
 from redis import Redis
 
 import logging
@@ -22,10 +21,6 @@ redis = Redis(
 events = EventQueue(
     name='bancho:events',
     connection=redis
-)
-ossapi = Ossapi(
-    config.OSU_CLIENT_ID,
-    config.OSU_CLIENT_SECRET
 )
 
 logger = logging.getLogger('jobs')
