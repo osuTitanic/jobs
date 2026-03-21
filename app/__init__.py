@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import List, Callable, Any
-from threading import Thread, Event
+from threading import Thread
 
 from . import session
 from . import common
@@ -63,7 +63,7 @@ class Task:
     @property
     def name(self) -> str:
         return self.function.__name__
-    
+
     @property
     def evaluated_args(self) -> List[Any]:
         return [
@@ -101,11 +101,13 @@ def run_task_loop(tasks: List[Task]) -> None:
     session.logger.info(f'Scheduling {len(tasks)} tasks:')
 
     for task in tasks:
+        task.interval = max(1, task.interval)
         session.logger.info(f'  - {task.name} ({task.interval})')
         schedule_task(task)
 
     # Keep the main thread alive to allow tasks to run
-    Event().wait()
+    while True:
+        time.sleep(5)
 
 def evaluate_arugment(arg: str) -> Any:
     if arg.isdigit():
