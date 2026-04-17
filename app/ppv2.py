@@ -71,7 +71,7 @@ def recalculate_failed_ppv2_calculations():
         failed_scores = session.query(DBScore) \
             .filter(DBScore.pp == 0) \
             .all()
-        
+
         for score in failed_scores:
             try:
                 pp = performance.calculate_ppv2(score)
@@ -152,7 +152,7 @@ def recalculate_ppv2_all_scores() -> None:
                 .offset(current_index * scores_per_index) \
                 .limit(scores_per_index) \
                 .all()
-            
+
             if not score_chunk:
                 break
 
@@ -170,6 +170,7 @@ def recalculate_ppv2_all_scores() -> None:
                 f'[ppv2] -> Recalculated chunk #{current_index} ({scores_per_index} scores).'
             )
             current_index += 1
+            session.commit()
 
     app.session.logger.info(f'[ppv2] -> Done.')
 
