@@ -44,6 +44,7 @@ TASKS: list[Callable] = [
     ranks.update_ranks,
     ranks.index_ranks,
     ppv2.recalculate_ppv2_all_scores,
+    ppv2.recalculate_ppv2_all_scores_multiprocessing,
     ppv2.recalculate_failed_ppv2_calculations,
     ppv2.recalculate_ppv2_multiprocessing,
     ppv2.recalculate_ppv2,

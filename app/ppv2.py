@@ -174,6 +174,57 @@ def recalculate_ppv2_all_scores() -> None:
 
     app.session.logger.info(f'[ppv2] -> Done.')
 
+def recalculate_ppv2_all_scores_multiprocessing(workers: int = 10) -> None:
+    with app.session.database.managed_session() as session:
+        all_scores = session.query(DBScore) \
+            .order_by(DBScore.status_pp.desc()) \
+            .all()
+
+        app.session.logger.info(
+            f'[ppv2] -> Recalculating ppv2 for {len(all_scores)} scores ({workers} workers)...'
+        )
+
+        if not all_scores:
+            app.session.logger.info('[ppv2] -> Done.')
+            return
+
+        # Keep each worker on a single database connection.
+        config.POSTGRES_POOL_SIZE = 1
+        config.POSTGRES_POOL_SIZE_OVERFLOW = -1
+        os.environ['POSTGRES_POOL_SIZE'] = '1'
+        os.environ['POSTGRES_POOL_SIZE_OVERFLOW'] = '-1'
+
+        chunk_size = max(1, math.ceil(len(all_scores) / int(workers)))
+        session.expunge_all()
+
+        with multiprocessing.Pool(int(workers)) as pool:
+            pool.map(
+                recalculate_ppv2_score_slice,
+                chunks(all_scores, chunk_size)
+            )
+
+    app.session.logger.info('[ppv2] -> Done.')
+
+def recalculate_ppv2_score_slice(score_slice: List[DBScore]) -> None:
+    app.session.database.engine.dispose()
+
+    with app.session.database.managed_session() as session:
+        for index, score in enumerate(score_slice, start=1):
+            pp = performance.calculate_ppv2(score)
+
+            if not pp:
+                app.session.logger.warning(f'[ppv2] -> Failed to update pp for: {score.id}')
+                continue
+
+            session.query(DBScore) \
+                .filter(DBScore.id == score.id) \
+                .update({'pp': pp}, synchronize_session=False)
+
+            if index % 1000 == 0:
+                session.commit()
+
+        session.commit()
+
 def calculate_weighted_ppv2(scores: List[DBScore]) -> float:
     if not scores:
         return 0
@@ -191,5 +242,6 @@ def calculate_weighted_acc(scores: List[DBScore]) -> float:
     return (weighted_acc * bonus_acc) / 100
 
 def chunks(list: list, amount: int):
+    amount = max(1, amount)
     for i in range(0, len(list), amount):
         yield list[i:i + amount]
