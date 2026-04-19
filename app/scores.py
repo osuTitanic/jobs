@@ -90,14 +90,6 @@ def recalculate_score_status(user_id: int, mode: int) -> None:
             app.session.logger.warning(f'[users] -> User "{user_id}" was not found.')
             return
 
-        # Update unmigrated scores to pp status
-        session.query(DBScore) \
-            .filter(DBScore.status_score == -1) \
-            .filter(DBScore.status_pp > -1) \
-            .filter(DBScore.hidden == False) \
-            .update({'status_score': DBScore.status_pp})
-        session.flush()
-
         # Recalculate score statuses
         user_scores = session.query(DBScore) \
             .filter(DBScore.user_id == user.id) \
