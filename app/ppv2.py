@@ -138,6 +138,7 @@ def recalculate_ppv2_for_chunk(users: List[DBUser]) -> None:
                 user,
                 session
             )
+            session.commit()
 
         app.session.logger.info(f'[ppv2] -> Done.')
 
