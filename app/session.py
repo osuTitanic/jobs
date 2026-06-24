@@ -1,5 +1,6 @@
 
 from .common.helpers.performance import ppv2, ppv2_rosu
+from .common.helpers.beatmaps import BeatmapResources
 from .common.cache.events import EventQueue
 from .common.database import Postgres
 from .common.storage import Storage
@@ -22,6 +23,7 @@ events = EventQueue(
     name='bancho:events',
     connection=redis
 )
+beatmaps = BeatmapResources(storage, redis)
 
 logger = logging.getLogger('jobs')
 requests = Session()
@@ -30,5 +32,5 @@ requests.headers = {
 }
 
 # Initialize ppv2 calculator
-instance = ppv2_rosu.RosuPerformanceCalculator(storage)
+instance = ppv2_rosu.RosuPerformanceCalculator(beatmaps)
 ppv2.initialize_calculator(instance)

@@ -1,11 +1,13 @@
-sqlalchemy==2.0.50
+sqlalchemy==2.0.51
 requests==2.34.2
-redis==8.0.0
+redis==8.0.1
 geoip2==5.2.0
 rosu-pp-py==4.0.2
 sendgrid==6.12.5
 boto3<2
 psycopg2-binary==2.9.12
-pydantic-settings==2.14.1
+pydantic-settings==2.14.2
+pillow==12.2.0
+zipstream-ng==1.9.2
 oauthlib==3.3.1
 git+https://github.com/osuTitanic/slider@master

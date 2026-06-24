@@ -83,7 +83,7 @@ def recalculate_beatmap_difficulty():
                 break
 
             for beatmap in pending_beatmaps:
-                beatmap_file = app.session.storage.get_beatmap(beatmap.id)
+                beatmap_file = app.session.beatmaps.osu(beatmap.id)
 
                 if not beatmap_file:
                     app.session.logger.warning(
