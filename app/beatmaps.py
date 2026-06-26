@@ -356,7 +356,7 @@ def fix_beatmap_total_lengths() -> None:
         )
             
         for beatmap in affected_beatmaps:
-            if not (beatmap_file := app.session.storage.get_beatmap_internal(beatmap.id)):
+            if not (beatmap_file := app.session.storage.get_beatmap(beatmap.id)):
                 app.session.logger.warning(
                     f'[beatmaps] -> Beatmap file was not found! ({beatmap.id})'
                 )
