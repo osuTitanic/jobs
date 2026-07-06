@@ -7,7 +7,7 @@ sendgrid==6.12.5
 boto3<2
 psycopg2-binary==2.9.12
 pydantic-settings==2.14.2
-pillow==12.2.0
+pillow==12.3.0
 zipstream-ng==1.9.2
 oauthlib==3.3.1
 git+https://github.com/osuTitanic/slider@master
